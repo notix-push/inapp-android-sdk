@@ -27,13 +27,13 @@ class NotixSDK: Service() {
         this.context = context.applicationContext
         this.notixAppId = notixAppId
 
-        notixFirebaseInitProvider = NotixFirebaseInitProvider()
-        notixFirebaseInitProvider!!.init(context, receiveTokenCallback)
-
         apiClient.getConfig(context, notixAppId, notixToken)
         storage.getUUID(context)
         apiClient.trackActivity(context)
         apiClient.trackVersion(context)
+
+        notixFirebaseInitProvider = NotixFirebaseInitProvider()
+        notixFirebaseInitProvider!!.init(context, receiveTokenCallback)
     }
 
     private fun callbackStub(token: String): String { return token }
