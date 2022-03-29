@@ -13,6 +13,10 @@ class NotixFirebaseInitProvider {
 
     fun init(context: Context, receiveTokenCallback: (String) -> String) {
         val senderId = storage.getSenderId(context)
+        if (senderId == null) {
+            Log.d("Debug", "Fetching sender id failed")
+            return
+        }
         initFirebaseApp(context, NotixPublicAppId, NotixPublicProjectId, NotixPublicApiKey, senderId ?: NotixPublicSenderId)
 
         val firebaseMessaging = firebaseApp?.get(FirebaseMessaging::class.java) as FirebaseMessaging

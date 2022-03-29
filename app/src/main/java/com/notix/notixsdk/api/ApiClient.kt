@@ -10,7 +10,6 @@ import com.google.gson.Gson
 import com.notix.notixsdk.StorageProvider
 import java.util.*
 
-
 class ApiClient {
     private val gson = Gson()
     private val storage = StorageProvider()
@@ -20,7 +19,7 @@ class ApiClient {
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
     }
 
-    fun getConfig(context: Context, appId: String, token: String) {
+    fun getConfig(context: Context, appId: String, token: String, receiveConfigCallback: () -> Unit) {
         val url = "$NOTIX_API_BASE_ROUTE/config?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
@@ -32,6 +31,7 @@ class ApiClient {
             storage.setSenderId(context, configDto.senderId)
             storage.setPubId(context, configDto.pubId)
             storage.setAppId(context, appId)
+            receiveConfigCallback()
         }
     }
 
