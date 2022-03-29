@@ -6,8 +6,6 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.notix.notixsdk.api.ApiClient
-import java.util.*
-
 
 @Suppress("unused")
 class NotixSDK: Service() {
@@ -27,13 +25,16 @@ class NotixSDK: Service() {
         this.context = context.applicationContext
         this.notixAppId = notixAppId
 
-        apiClient.getConfig(context, notixAppId, notixToken)
-        storage.getUUID(context)
-        apiClient.trackActivity(context)
-        apiClient.trackVersion(context)
+        val initFirebaseProvider =  {
+            storage.getUUID(context)
+            apiClient.trackActivity(context)
+            apiClient.trackVersion(context)
 
-        notixFirebaseInitProvider = NotixFirebaseInitProvider()
-        notixFirebaseInitProvider!!.init(context, receiveTokenCallback)
+            notixFirebaseInitProvider = NotixFirebaseInitProvider()
+            notixFirebaseInitProvider!!.init(context, receiveTokenCallback)
+        }
+
+        apiClient.getConfig(context, notixAppId, notixToken, initFirebaseProvider)
     }
 
     private fun callbackStub(token: String): String { return token }
