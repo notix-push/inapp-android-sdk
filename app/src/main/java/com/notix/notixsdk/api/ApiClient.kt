@@ -128,7 +128,14 @@ class ApiClient {
             return
         }
 
-        val activityDto = RequestModels.ActivityModel(appId, pubId)
+        val uuid = StorageProvider().getUUID(context)
+
+        if (uuid == "") {
+            Log.d("Debug", "uuid is empty")
+            return
+        }
+
+        val activityDto = RequestModels.ActivityModel(appId, pubId, uuid)
 
         postRequestString(context, url, headers, gson.toJson(activityDto).toString()) {
             Log.d("Debug", "activity tracked")
@@ -156,10 +163,17 @@ class ApiClient {
             return
         }
 
+        val uuid = StorageProvider().getUUID(context)
+
+        if (uuid == "") {
+            Log.d("Debug", "uuid is empty")
+            return
+        }
+
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
-        val versionDto = RequestModels.VersionModel(appId, pubId, version)
+        val versionDto = RequestModels.VersionModel(appId, pubId, version, uuid)
 
         postRequestString(context, url, headers, gson.toJson(versionDto).toString()) {
             Log.d("Debug", "version tracked")

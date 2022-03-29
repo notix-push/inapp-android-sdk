@@ -24,11 +24,13 @@ class RequestModels {
     data class ActivityModel (
         @SerializedName("app_id")       var appId: String,
         @SerializedName("pub_id")       val pubId: Int,
+        @SerializedName("uuid")         val uuid: String,
     )
 
     data class VersionModel (
         @SerializedName("app_id")       var appId: String,
         @SerializedName("pub_id")       val pubId: Int,
-        @SerializedName("version")       var version: String,
+        @SerializedName("version")      var version: String,
+        @SerializedName("uuid")         val uuid: String,
     )
 }
