@@ -107,43 +107,8 @@ class ApiClient {
         }
     }
 
-    fun trackActivity(context: Context) {
-        val url = "$NOTIX_EVENTS_BASE_ROUTE/activity"
-
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-
-        val appId = StorageProvider().getAppId(context)
-
-        if (appId == null) {
-            Log.d("Debug", "app id is empty")
-            return
-        }
-
-        val pubId = StorageProvider().getPubId(context)
-
-        if (pubId == 0) {
-            Log.d("Debug", "pub id is empty")
-            return
-        }
-
-        val uuid = StorageProvider().getUUID(context)
-
-        if (uuid == "") {
-            Log.d("Debug", "uuid is empty")
-            return
-        }
-
-        val activityDto = RequestModels.ActivityModel(appId, pubId, uuid)
-
-        postRequestString(context, url, headers, gson.toJson(activityDto).toString()) {
-            Log.d("Debug", "activity tracked")
-        }
-    }
-
-    fun trackVersion(context: Context) {
-        val url = "$NOTIX_EVENTS_BASE_ROUTE/version"
+    fun refresh(context: Context) {
+        val url = "$NOTIX_EVENTS_BASE_ROUTE/refresh"
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
@@ -173,7 +138,7 @@ class ApiClient {
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
-        val versionDto = RequestModels.VersionModel(appId, pubId, version, uuid)
+        val versionDto = RequestModels.RefreshModel(appId, pubId, uuid, version)
 
         postRequestString(context, url, headers, gson.toJson(versionDto).toString()) {
             Log.d("Debug", "version tracked")
