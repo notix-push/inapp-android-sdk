@@ -15,12 +15,12 @@ class ApiClient {
     private val storage = StorageProvider()
 
     companion object {
-        const val NOTIX_API_BASE_ROUTE = "https://notix.io/api/inapp/android"
+        const val NOTIX_API_BASE_ROUTE = "https://notix.io/api/inapp"
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
     }
 
     fun getConfig(context: Context, appId: String, token: String, receiveConfigCallback: () -> Unit) {
-        val url = "$NOTIX_API_BASE_ROUTE/config?app_id=$appId"
+        val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Authorization-Token"] = token
