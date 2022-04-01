@@ -107,11 +107,12 @@ class ApiClient {
         }
     }
 
-    fun refresh(context: Context) {
-        val url = "$NOTIX_EVENTS_BASE_ROUTE/refresh"
+    fun refresh(context: Context, appId: String, token: String) {
+        val url = "$NOTIX_API_BASE_ROUTE/refresh?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
+        headers["Authorization-Token"] = token
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
 
         val appId = StorageProvider().getAppId(context)
@@ -138,9 +139,11 @@ class ApiClient {
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
-        val versionDto = RequestModels.RefreshModel(appId, pubId, uuid, version)
+        val refreshDto = RequestModels.RefreshModel(appId, pubId, uuid, version)
 
-        postRequestString(context, url, headers, gson.toJson(versionDto).toString()) {
+        Log.d("Debug", "refresh: " + gson.toJson(refreshDto).toString())
+
+        postRequestString(context, url, headers, gson.toJson(refreshDto).toString()) {
             Log.d("Debug", "version tracked")
         }
     }
