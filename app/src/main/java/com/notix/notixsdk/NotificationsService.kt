@@ -11,10 +11,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 
 @Suppress("unused")
 class NotificationsService {
+    @RequiresApi(Build.VERSION_CODES.O)
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent) {
         if (isAppOnForeground(context)) {
             showToast(context, intent)
@@ -24,6 +26,7 @@ class NotificationsService {
         showNotification(context, activity, intent, NotificationParameters())
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent, notificationParameters: NotificationParameters) {
         if (isAppOnForeground(context)) {
             showToast(context, intent)
@@ -53,6 +56,7 @@ class NotificationsService {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun showNotification(context: Context, activity: Class<*>, intent: Intent, notificationParameters: NotificationParameters) {
         val title = intent.getStringExtra("title")
         val text = intent.getStringExtra("text")
@@ -84,7 +88,7 @@ class NotificationsService {
             .setVibrate(notificationParameters.vibrationPattern)
             .setSound(notificationParameters.sound ?: defaultSoundUri, AudioManager.STREAM_NOTIFICATION)
             .setPriority(notificationParameters.priority)
-            .setColor(notificationParameters.color)
+            .setColor(notificationParameters.color.toArgb())
             .setContentIntent(pendingIntent)
             .build()
 
@@ -94,7 +98,9 @@ class NotificationsService {
             val channel = NotificationChannel(channelId, "NOTIX_NOTIFICATION_CHANNEL", NotificationManager.IMPORTANCE_HIGH)
             channel.enableVibration(true)
             channel.vibrationPattern = notificationParameters.vibrationPattern
-
+            if (!notificationParameters.showBadgeIcon) {
+                channel.setShowBadge(false)
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
