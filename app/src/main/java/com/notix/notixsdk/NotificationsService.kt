@@ -94,7 +94,9 @@ class NotificationsService {
             val channel = NotificationChannel(channelId, "NOTIX_NOTIFICATION_CHANNEL", NotificationManager.IMPORTANCE_HIGH)
             channel.enableVibration(true)
             channel.vibrationPattern = notificationParameters.vibrationPattern
-
+            if (!notificationParameters.showBadgeIcon) {
+                channel.setShowBadge(false)
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
