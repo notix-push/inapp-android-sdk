@@ -28,10 +28,15 @@ class ApiClient {
 
         getRequest(context, url, headers) {
             val configDto = gson.fromJson(it, RequestModels.ConfigModel::class.java)
-            storage.setSenderId(context, configDto.senderId)
-            storage.setPubId(context, configDto.pubId)
-            storage.setAppId(context, appId)
-            receiveConfigCallback()
+
+            if (configDto == null || configDto.appId == "" || configDto.senderId == "" || configDto.pubId == 0) {
+                Log.d("Debug", "invalid config")
+            } else {
+                storage.setSenderId(context, configDto.senderId)
+                storage.setPubId(context, configDto.pubId)
+                storage.setAppId(context, appId)
+                receiveConfigCallback()
+            }
         }
     }
 
