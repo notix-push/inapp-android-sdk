@@ -26,6 +26,7 @@ class NotixSDK: Service() {
         this.notixAppId = notixAppId
 
         val initFirebaseProvider =  {
+            storage.setPackageName(context, context.packageName)
             storage.getUUID(context)
             apiClient.refresh(context, notixAppId, notixToken)
 

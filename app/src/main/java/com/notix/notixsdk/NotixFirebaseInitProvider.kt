@@ -10,6 +10,7 @@ import com.notix.notixsdk.api.ApiClient
 class NotixFirebaseInitProvider {
     private var firebaseApp: FirebaseApp? = null
     private val storage = StorageProvider()
+    private val apiClient = ApiClient()
 
     fun init(context: Context, receiveTokenCallback: (String) -> String) {
         val senderId = storage.getSenderId(context)
@@ -33,8 +34,12 @@ class NotixFirebaseInitProvider {
             if ((availableToken == null && token != null) || availableToken != token) {
                 val appId = StorageProvider().getAppId(context)
                 val uuid = StorageProvider().getUUID(context)
-                val packageName = context.packageName
-                ApiClient().subscribe(context, appId!!, uuid, packageName, token!!)
+                val packageName = StorageProvider().getPackageName(context)
+                if (appId != null && packageName != null) {
+                    apiClient.subscribe(context, appId, uuid, packageName, token!!)
+                } else {
+                    Log.d("Debug", "invalid subscribe data")
+                }
             }
 
             if (token != null) {

@@ -10,6 +10,7 @@ import com.notix.notixsdk.api.ApiClient
 
 open class NotixFirebaseMessagingService: FirebaseMessagingService() {
     lateinit var intent: Intent
+    private var apiClient: ApiClient = ApiClient()
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onMessageReceived(message: RemoteMessage) {
@@ -50,7 +51,12 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
 
         val appId = StorageProvider().getAppId(this)
         val uuid = StorageProvider().getUUID(this)
-        val packageName = this.packageName
-        ApiClient().subscribe(this, appId!!, uuid, packageName, token)
+        val packageName = StorageProvider().getPackageName(this)
+
+        if (appId != null && packageName != null) {
+            apiClient.subscribe(this, appId, uuid, packageName, token)
+        } else {
+            Log.d("Debug", "invalid subscribe data")
+        }
     }
 }
