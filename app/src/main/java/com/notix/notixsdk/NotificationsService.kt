@@ -70,7 +70,12 @@ class NotificationsService {
         rootIntent.putExtra("click_data", clickData)
 
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
-        val pendingIntent = PendingIntent.getActivity(context, 0 , rootIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val pendingIntent:PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_MUTABLE)
+        } else {
+            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_ONE_SHOT)
+        }
 
         val channelId = context.getString(R.string.default_notification_channel_id)
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
