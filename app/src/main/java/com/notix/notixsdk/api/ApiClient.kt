@@ -6,12 +6,12 @@ import com.android.volley.AuthFailureError
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.google.gson.Gson
 import com.notix.notixsdk.StorageProvider
+import org.json.JSONException
+import org.json.JSONObject
 import java.util.*
 
 class ApiClient {
-    private val gson = Gson()
     private val storage = StorageProvider()
 
     companion object {
@@ -27,15 +27,24 @@ class ApiClient {
         headers["Content-Type"] = "application/json"
 
         getRequest(context, url, headers) {
-            val configDto = gson.fromJson(it, RequestModels.ConfigModel::class.java)
+            try {
+                val dataJson = JSONObject(it)
+                val configDto = RequestModels.ConfigModel(
+                    dataJson.getString("app_id"),
+                    dataJson.getInt("pub_id"),
+                    dataJson.getLong("sender_id")
+                )
 
-            if (configDto == null || configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
-                Log.d("NotixDebug", "invalid config: $it")
-            } else {
-                storage.setSenderId(context, configDto.senderId)
-                storage.setPubId(context, configDto.pubId)
-                storage.setAppId(context, appId)
-                receiveConfigCallback()
+                if (configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
+                    Log.d("NotixDebug", "invalid config: $it")
+                } else {
+                    storage.setSenderId(context, configDto.senderId)
+                    storage.setPubId(context, configDto.pubId)
+                    storage.setAppId(context, appId)
+                    receiveConfigCallback()
+                }
+            } catch (e: JSONException) {
+                Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
             }
         }
     }
@@ -47,13 +56,13 @@ class ApiClient {
         headers["Content-Type"] = "application/json"
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
 
-        val body: MutableMap<String, String> = HashMap()
-        body["uuid"] = uuid
-        body["package_name"] = packageName
-        body["appId"] = appId
-        body["token"] = token
+        val dataJson = JSONObject()
+        dataJson.put("uuid", uuid)
+        dataJson.put("package_name", packageName)
+        dataJson.put("appId", appId)
+        dataJson.put("token", token)
 
-        postRequestMap(context, url, headers, body) {
+        postRequest(context, url, headers, dataJson.toString()) {
             StorageProvider().setDeviceToken(context, token)
         }
     }
@@ -76,13 +85,24 @@ class ApiClient {
             Log.d("NotixDebug", "app id is empty")
             return
         }
+        try {
+            val dataJson = JSONObject(impressionData)
 
-        val impressionDto = gson.fromJson(impressionData, RequestModels.ImpressionModel::class.java)
-        impressionDto.appId = appId
+            val impressionDto = RequestModels.ImpressionModel(
+                dataJson.getString("app_id"),
+                dataJson.getInt("pub_id"),
+                dataJson.getInt("sending_id")
+            )
 
-        postRequestString(context, url, headers, gson.toJson(impressionDto).toString()) {
-            Log.d("NotixDebug", "impression tracked")
+            impressionDto.appId = appId
+
+            postRequest(context, url, headers, dataJson.toString()) {
+                Log.d("NotixDebug", "impression tracked")
+            }
+        } catch (e: JSONException) {
+            Log.d("NotixDebug", "invalid imression json: $impressionData, ${e.message}")
         }
+
     }
 
     fun click(context: Context, clickData: String?) {
@@ -104,11 +124,22 @@ class ApiClient {
             return
         }
 
-        val clickDto = gson.fromJson(clickData, RequestModels.ClickModel::class.java)
-        clickDto.appId = appId
+        try {
+            val dataJson = JSONObject(clickData)
 
-        postRequestString(context, url, headers, gson.toJson(clickDto).toString()) {
-            Log.d("NotixDebug", "click tracked")
+            val clickDto = RequestModels.ClickModel(
+                dataJson.getString("app_id"),
+                dataJson.getInt("pub_id"),
+                dataJson.getInt("sending_id")
+            )
+
+            clickDto.appId = appId
+
+            postRequest(context, url, headers, dataJson.toString()) {
+                Log.d("NotixDebug", "click tracked")
+            }
+        } catch (e: JSONException) {
+            Log.d("NotixDebug", "invalid imression json: $clickData, ${e.message}")
         }
     }
 
@@ -119,13 +150,6 @@ class ApiClient {
         headers["Content-Type"] = "application/json"
         headers["Authorization-Token"] = token
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-
-        val appId = StorageProvider().getAppId(context)
-
-        if (appId == null) {
-            Log.d("NotixDebug", "app id is empty")
-            return
-        }
 
         val pubId = StorageProvider().getPubId(context)
 
@@ -144,11 +168,15 @@ class ApiClient {
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
-        val refreshDto = RequestModels.RefreshModel(appId, pubId, uuid, version)
+        val dataJson = JSONObject()
+        dataJson.put("app_id", appId)
+        dataJson.put("pub_id", pubId)
+        dataJson.put("uuid", uuid)
+        dataJson.put("version", version)
 
-        Log.d("NotixDebug", "refresh: " + gson.toJson(refreshDto).toString())
+        Log.d("NotixDebug", "refresh: $dataJson")
 
-        postRequestString(context, url, headers, gson.toJson(refreshDto).toString()) {
+        postRequest(context, url, headers, dataJson.toString()) {
             Log.d("NotixDebug", "version tracked")
         }
     }
@@ -175,26 +203,10 @@ class ApiClient {
         queue.add(stringRequest)
     }
 
-    private fun postRequestMap(context: Context,
-                            url: String,
-                            headers: MutableMap<String, String>,
-                            body: MutableMap<String, String>,
-                            doResponse: (response: String) -> Unit) {
-        return postRequest(context, url, headers, gson.toJson(body).toString().toByteArray(), doResponse )
-    }
-
-    private fun postRequestString(context: Context,
-                               url: String,
-                               headers: MutableMap<String, String>,
-                               body: String,
-                               doResponse: (response: String) -> Unit) {
-        return postRequest(context, url, headers, body.toByteArray(), doResponse )
-    }
-
     private fun postRequest(context: Context,
                             url: String,
                             headers: MutableMap<String, String>,
-                            body: ByteArray,
+                            body: String,
                             doResponse: (response: String) -> Unit) {
         val queue = Volley.newRequestQueue(context)
 
@@ -219,7 +231,7 @@ class ApiClient {
 
             @Throws(AuthFailureError::class)
             override fun getBody(): ByteArray {
-                return body
+                return body.toByteArray()
             }
         }
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.12'
+    sdkVersion = '0.0.13'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -19,7 +19,7 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        versionCode 10
+        versionCode 11
         versionName "$sdkVersion"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -71,9 +71,8 @@ dependencies {
         exclude group: "org.apache.httpcomponents", module: "httpclient"
         exclude group: "org.apache.httpcomponents", module: "httpcore"
     }
-
+    implementation 'androidx.work:work-runtime-ktx:2.7.1'
     implementation 'com.android.volley:volley:1.2.1'
-    implementation 'com.google.code.gson:gson:2.9.0'
 }
 
 afterEvaluate {
