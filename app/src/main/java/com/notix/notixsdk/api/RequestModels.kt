@@ -6,7 +6,7 @@ class RequestModels {
     data class ConfigModel (
         @SerializedName("app_id")  val appId: String,
         @SerializedName("pub_id")  val pubId: Int,
-        @SerializedName("sender_id")   val senderId: String,
+        @SerializedName("sender_id")   val senderId: Long,
     )
 
     data class ClickModel (

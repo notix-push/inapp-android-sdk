@@ -29,7 +29,7 @@ class ApiClient {
         getRequest(context, url, headers) {
             val configDto = gson.fromJson(it, RequestModels.ConfigModel::class.java)
 
-            if (configDto == null || configDto.appId == "" || configDto.senderId == "" || configDto.pubId == 0) {
+            if (configDto == null || configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
                 Log.d("NotixDebug", "invalid config: $it")
             } else {
                 storage.setSenderId(context, configDto.senderId)
