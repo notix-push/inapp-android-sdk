@@ -14,7 +14,7 @@ class NotixFirebaseInitProvider {
 
     fun init(context: Context, receiveTokenCallback: (String) -> String) {
         val senderId = storage.getSenderId(context)
-        if (senderId == null) {
+        if (senderId == 0L) {
             Log.d("NotixDebug", "Fetching sender id failed")
             return
         }
@@ -50,13 +50,13 @@ class NotixFirebaseInitProvider {
         firebaseMessaging.isAutoInitEnabled = true
     }
 
-    private fun initFirebaseApp(context: Context, appId: String, projectId: String, apiKey: String, senderId: String) {
+    private fun initFirebaseApp(context: Context, appId: String, projectId: String, apiKey: String, senderId: Long) {
         val isAlreadyInitialized = isFirebaseAppAlreadyInitialized(context)
 
         if (!isAlreadyInitialized) {
             val firebaseOptions: FirebaseOptions =
                 FirebaseOptions.Builder()
-                    .setGcmSenderId(senderId)
+                    .setGcmSenderId(senderId.toString())
                     .setApplicationId(appId)
                     .setApiKey(apiKey)
                     .setProjectId(projectId)
@@ -87,7 +87,7 @@ class NotixFirebaseInitProvider {
         const val NotixPublicProjectId: String = "testforpushespublic"
         const val NotixPublicApiKey: String = "AIzaSyBQfBRsRT3N8jqnzwzOQPGGT9OC0Fn1ea8"
 
-        const val NotixPublicSenderId: String = "778573163969" // Need get from api server
+        const val NotixPublicSenderId: Long = 778573163969 // Need get from api server
         const val NotixPublicAppName: String = "NOTIX_SDK_APP_NAME"
     }
 }

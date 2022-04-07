@@ -27,12 +27,12 @@ class StorageProvider {
         return uniqueID
     }
 
-    fun getSenderId(context: Context): String? {
-        return getString(context, NOTIX_REMOTE_SENDER_ID)
+    fun getSenderId(context: Context): Long {
+        return getLong(context, NOTIX_REMOTE_SENDER_ID)
     }
 
-    fun setSenderId(context: Context, senderId: String) {
-        putString(context, NOTIX_REMOTE_SENDER_ID, senderId)
+    fun setSenderId(context: Context, senderId: Long) {
+        putLong(context, NOTIX_REMOTE_SENDER_ID, senderId)
     }
 
     fun getAppId(context: Context): String? {
@@ -99,5 +99,22 @@ class StorageProvider {
             key, Service.MODE_PRIVATE
         )
         return sharedPrefs.getInt(key, 0)
+    }
+
+    private fun putLong(context: Context, key: String, value: Long) {
+        val sharedPrefs = context.getSharedPreferences(
+            key, Service.MODE_PRIVATE
+        )
+
+        val editor: SharedPreferences.Editor = sharedPrefs.edit()
+        editor.putLong(key, value)
+        editor.apply()
+    }
+
+    private fun getLong(context: Context, key: String): Long {
+        val sharedPrefs = context.getSharedPreferences(
+            key, Service.MODE_PRIVATE
+        )
+        return sharedPrefs.getLong(key, 0)
     }
 }
