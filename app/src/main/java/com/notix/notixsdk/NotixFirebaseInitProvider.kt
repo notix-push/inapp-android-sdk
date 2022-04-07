@@ -15,7 +15,7 @@ class NotixFirebaseInitProvider {
     fun init(context: Context, receiveTokenCallback: (String) -> String) {
         val senderId = storage.getSenderId(context)
         if (senderId == null) {
-            Log.d("Debug", "Fetching sender id failed")
+            Log.d("NotixDebug", "Fetching sender id failed")
             return
         }
         initFirebaseApp(context, NotixPublicAppId, NotixPublicProjectId, NotixPublicApiKey, senderId ?: NotixPublicSenderId)
@@ -23,11 +23,11 @@ class NotixFirebaseInitProvider {
         val firebaseMessaging = firebaseApp?.get(FirebaseMessaging::class.java) as FirebaseMessaging
         firebaseMessaging.token.addOnCompleteListener{
             if (!it.isSuccessful) {
-                Log.d("Debug", "Fetching token failed", it.exception)
+                Log.d("NotixDebug", "Fetching token failed", it.exception)
             }
 
             val token = it.result
-            Log.d("Debug", "Token received $token")
+            Log.d("NotixDebug", "Token received $token")
 
             val availableToken = StorageProvider().getDeviceToken(context)
 
@@ -38,7 +38,7 @@ class NotixFirebaseInitProvider {
                 if (appId != null && packageName != null) {
                     apiClient.subscribe(context, appId, uuid, packageName, token!!)
                 } else {
-                    Log.d("Debug", "invalid subscribe data")
+                    Log.d("NotixDebug", "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)")
                 }
             }
 

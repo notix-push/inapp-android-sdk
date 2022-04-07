@@ -22,7 +22,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         val clickData: String = message.data.getOrDefault("click_data", "")
         val impressionData: String = message.data.getOrDefault("impression_data", "")
 
-        Log.d("Debug", "Message received event=$event title=$title text=$text")
+        Log.d("NotixDebug", "Message received event=$event title=$title text=$text")
 
         intent = Intent("NOTIX_NOTIFICATION_INTENT")
 
@@ -47,7 +47,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
             return
         }
 
-        Log.d("Debug", "New token received $token")
+        Log.d("NotixDebug", "New token received $token")
 
         val appId = StorageProvider().getAppId(this)
         val uuid = StorageProvider().getUUID(this)
@@ -56,7 +56,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         if (appId != null && packageName != null) {
             apiClient.subscribe(this, appId, uuid, packageName, token)
         } else {
-            Log.d("Debug", "invalid subscribe data")
+            Log.d("NotixDebug", "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)")
         }
     }
 }
