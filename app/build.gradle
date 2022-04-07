@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.9'
+    sdkVersion = '0.0.11'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -19,7 +19,7 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        versionCode 7
+        versionCode 9
         versionName "$sdkVersion"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

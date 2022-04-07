@@ -12,6 +12,7 @@ class StorageProvider {
         const val NOTIX_APP_ID = "NOTIX_APP_ID"
         const val NOTIX_PUB_ID = "NOTIX_PUB_ID"
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
+        const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
     }
 
     @Synchronized
@@ -56,6 +57,14 @@ class StorageProvider {
 
     fun setDeviceToken(context: Context, appId: String) {
         putString(context, NOTIX_DEVICE_TOKEN, appId)
+    }
+
+    fun getPackageName(context: Context): String? {
+        return getString(context, NOTIX_PACKAGE_NAME)
+    }
+
+    fun setPackageName(context: Context, packageName: String) {
+        putString(context, NOTIX_PACKAGE_NAME, packageName)
     }
 
     private fun putString(context: Context, key: String, value: String) {

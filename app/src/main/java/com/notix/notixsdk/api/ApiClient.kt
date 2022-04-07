@@ -28,10 +28,15 @@ class ApiClient {
 
         getRequest(context, url, headers) {
             val configDto = gson.fromJson(it, RequestModels.ConfigModel::class.java)
-            storage.setSenderId(context, configDto.senderId)
-            storage.setPubId(context, configDto.pubId)
-            storage.setAppId(context, appId)
-            receiveConfigCallback()
+
+            if (configDto == null || configDto.appId == "" || configDto.senderId == "" || configDto.pubId == 0) {
+                Log.d("NotixDebug", "invalid config: $it")
+            } else {
+                storage.setSenderId(context, configDto.senderId)
+                storage.setPubId(context, configDto.pubId)
+                storage.setAppId(context, appId)
+                receiveConfigCallback()
+            }
         }
     }
 
@@ -55,7 +60,7 @@ class ApiClient {
 
     fun impression(context: Context, impressionData: String?) {
         if (impressionData == null) {
-            Log.d("Debug", "click data is empty")
+            Log.d("NotixDebug", "impression data is empty")
             return
         }
 
@@ -68,7 +73,7 @@ class ApiClient {
         val appId = StorageProvider().getAppId(context)
 
         if (appId == null) {
-            Log.d("Debug", "app id is empty")
+            Log.d("NotixDebug", "app id is empty")
             return
         }
 
@@ -76,13 +81,13 @@ class ApiClient {
         impressionDto.appId = appId
 
         postRequestString(context, url, headers, gson.toJson(impressionDto).toString()) {
-            Log.d("Debug", "impression tracked")
+            Log.d("NotixDebug", "impression tracked")
         }
     }
 
     fun click(context: Context, clickData: String?) {
         if (clickData == null) {
-            Log.d("Debug", "click data is empty")
+            Log.d("NotixDebug", "click data is empty")
             return
         }
 
@@ -95,7 +100,7 @@ class ApiClient {
         val appId = StorageProvider().getAppId(context)
 
         if (appId == null) {
-            Log.d("Debug", "app id is empty")
+            Log.d("NotixDebug", "app id is empty")
             return
         }
 
@@ -103,7 +108,7 @@ class ApiClient {
         clickDto.appId = appId
 
         postRequestString(context, url, headers, gson.toJson(clickDto).toString()) {
-            Log.d("Debug", "click tracked")
+            Log.d("NotixDebug", "click tracked")
         }
     }
 
@@ -118,21 +123,21 @@ class ApiClient {
         val appId = StorageProvider().getAppId(context)
 
         if (appId == null) {
-            Log.d("Debug", "app id is empty")
+            Log.d("NotixDebug", "app id is empty")
             return
         }
 
         val pubId = StorageProvider().getPubId(context)
 
         if (pubId == 0) {
-            Log.d("Debug", "pub id is empty")
+            Log.d("NotixDebug", "pub id is empty")
             return
         }
 
         val uuid = StorageProvider().getUUID(context)
 
         if (uuid == "") {
-            Log.d("Debug", "uuid is empty")
+            Log.d("NotixDebug", "uuid is empty")
             return
         }
 
@@ -141,10 +146,10 @@ class ApiClient {
 
         val refreshDto = RequestModels.RefreshModel(appId, pubId, uuid, version)
 
-        Log.d("Debug", "refresh: " + gson.toJson(refreshDto).toString())
+        Log.d("NotixDebug", "refresh: " + gson.toJson(refreshDto).toString())
 
         postRequestString(context, url, headers, gson.toJson(refreshDto).toString()) {
-            Log.d("Debug", "version tracked")
+            Log.d("NotixDebug", "version tracked")
         }
     }
 
@@ -154,10 +159,11 @@ class ApiClient {
         val stringRequest: StringRequest = object : StringRequest(
             Method.GET, url,
             Response.Listener { response ->
+                Log.d("NotixDebug", "(GET) url => $url | response => $response")
                 doResponse(response)
             },
             Response.ErrorListener { error ->
-                Log.d("Debug", "api client error => $error")
+                Log.d("NotixDebug", "api client error => $error")
             }
         ) {
             @Throws(AuthFailureError::class)
@@ -195,10 +201,11 @@ class ApiClient {
         val stringRequest: StringRequest = object : StringRequest(
             Method.POST, url,
             Response.Listener { response ->
+                Log.d("NotixDebug", "(POST) url => $url | response => $response")
                 doResponse(response)
             },
             Response.ErrorListener { error ->
-                Log.d("Debug", "api client error => $error")
+                Log.d("NotixDebug", "api client error => $error")
             }
         ) {
             @Throws(AuthFailureError::class)
