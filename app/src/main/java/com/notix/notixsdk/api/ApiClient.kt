@@ -87,14 +87,7 @@ class ApiClient {
         }
         try {
             val dataJson = JSONObject(impressionData)
-
-            val impressionDto = RequestModels.ImpressionModel(
-                dataJson.getString("app_id"),
-                dataJson.getInt("pub_id"),
-                dataJson.getInt("sending_id")
-            )
-
-            impressionDto.appId = appId
+            dataJson.put("app_id", appId)
 
             postRequest(context, url, headers, dataJson.toString()) {
                 Log.d("NotixDebug", "impression tracked")
@@ -126,14 +119,7 @@ class ApiClient {
 
         try {
             val dataJson = JSONObject(clickData)
-
-            val clickDto = RequestModels.ClickModel(
-                dataJson.getString("app_id"),
-                dataJson.getInt("pub_id"),
-                dataJson.getInt("sending_id")
-            )
-
-            clickDto.appId = appId
+            dataJson.put("app_id", appId)
 
             postRequest(context, url, headers, dataJson.toString()) {
                 Log.d("NotixDebug", "click tracked")
