@@ -19,11 +19,11 @@ class ApiClient {
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
     }
 
-    fun getConfig(context: Context, appId: String, token: String, receiveConfigCallback: () -> Unit) {
+    fun getConfig(context: Context, appId: String, authToken: String, getConfigDoneCallback: () -> Unit) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
-        headers["Authorization-Token"] = token
+        headers["Authorization-Token"] = authToken
         headers["Content-Type"] = "application/json"
 
         getRequest(context, url, headers) {
@@ -41,7 +41,7 @@ class ApiClient {
                     storage.setSenderId(context, configDto.senderId)
                     storage.setPubId(context, configDto.pubId)
                     storage.setAppId(context, appId)
-                    receiveConfigCallback()
+                    getConfigDoneCallback()
                 }
             } catch (e: JSONException) {
                 Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
@@ -129,12 +129,18 @@ class ApiClient {
         }
     }
 
-    fun refresh(context: Context, appId: String, token: String) {
+    fun refresh(context: Context, appId: String, authToken: String) {
+        val availableToken = StorageProvider().getDeviceToken(context)
+        if (availableToken == null) {
+            Log.d("NotixDebug", "refresh canceled, no device token")
+            return
+        }
+
         val url = "$NOTIX_API_BASE_ROUTE/refresh?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
-        headers["Authorization-Token"] = token
+        headers["Authorization-Token"] = authToken
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
 
         val pubId = StorageProvider().getPubId(context)

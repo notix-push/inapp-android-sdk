@@ -10,6 +10,7 @@ class StorageProvider {
         const val NOTIX_PREF_UNIQUE_ID = "NOTIX_PREF_UNIQUE_ID"
         const val NOTIX_REMOTE_SENDER_ID = "NOTIX_REMOTE_SENDER_ID"
         const val NOTIX_APP_ID = "NOTIX_APP_ID"
+        const val NOTIX_AUTH_TOKEN = "NOTIX_AUTH_TOKEN"
         const val NOTIX_PUB_ID = "NOTIX_PUB_ID"
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
         const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
@@ -41,6 +42,14 @@ class StorageProvider {
 
     fun setAppId(context: Context, appId: String) {
         putString(context, NOTIX_APP_ID, appId)
+    }
+
+    fun getAuthToken(context: Context): String? {
+        return getString(context, NOTIX_AUTH_TOKEN)
+    }
+
+    fun setAuthToken(context: Context, authToken: String) {
+        putString(context, NOTIX_AUTH_TOKEN, authToken)
     }
 
     fun getPubId(context: Context): Int {
