@@ -25,13 +25,19 @@ class NotixSDK: Service() {
         this.context = context.applicationContext
         this.notixAppId = notixAppId
 
+        val receiveTokenEnrichCallback : (String) -> String = { data ->
+            apiClient.refresh(context, notixAppId, notixToken)
+            receiveTokenCallback(data)
+        }
+
         val initFirebaseProvider =  {
             storage.setPackageName(context, context.packageName)
+            storage.setAuthToken(context, notixToken)
             storage.getUUID(context)
-            apiClient.refresh(context, notixAppId, notixToken)
+
 
             notixFirebaseInitProvider = NotixFirebaseInitProvider()
-            notixFirebaseInitProvider!!.init(context, receiveTokenCallback)
+            notixFirebaseInitProvider!!.init(context, receiveTokenEnrichCallback)
         }
 
         apiClient.getConfig(context, notixAppId, notixToken, initFirebaseProvider)
