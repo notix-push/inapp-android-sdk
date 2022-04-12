@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.AudioManager
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -16,7 +17,7 @@ import androidx.core.app.NotificationCompat
 @Suppress("unused")
 class NotificationsService {
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent) {
-        if (isAppOnForeground(context)) {
+        if (isAppOnForeground(context) && !hasTargetUrl(intent)) {
             showToast(context, intent)
         }
 
@@ -25,12 +26,18 @@ class NotificationsService {
     }
 
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent, notificationParameters: NotificationParameters) {
-        if (isAppOnForeground(context)) {
+        if (isAppOnForeground(context) && !hasTargetUrl(intent)) {
             showToast(context, intent)
         }
 
         val activity = resolver.resolveActivity(intent)
         showNotification(context, activity, intent, notificationParameters)
+    }
+
+    private fun hasTargetUrl(intent: Intent): Boolean {
+        val targetUrlData = intent.getStringExtra("target_url_data")
+
+        return targetUrlData != null && targetUrlData != ""
     }
 
     private fun isAppOnForeground(context: Context): Boolean {
@@ -57,17 +64,26 @@ class NotificationsService {
         val title = intent.getStringExtra("title")
         val text = intent.getStringExtra("text")
         val clickData = intent.getStringExtra("click_data")
+        val targetUrlData = intent.getStringExtra("target_url_data")
 
-        val rootIntent = Intent(context, NotificationClickHandlerActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val rootIntent : Intent
+
+        val notificationIntent : Intent
+
+        if (targetUrlData != null && targetUrlData != "") {
+            rootIntent = Intent(Intent.ACTION_VIEW)
+            rootIntent.data = Uri.parse(targetUrlData)
+        } else {
+            rootIntent = Intent(context, NotificationClickHandlerActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            notificationIntent = Intent(context, activity).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+            rootIntent.putExtra("notix-notification-intent", notificationIntent)
+            rootIntent.putExtra("click_data", clickData)
         }
-
-        val notificationIntent = Intent(context, activity).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        rootIntent.putExtra("notix-notification-intent", notificationIntent)
-        rootIntent.putExtra("click_data", clickData)
 
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
 
