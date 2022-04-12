@@ -21,6 +21,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         val text: String = message.data.getOrDefault("text", "")
         val clickData: String = message.data.getOrDefault("click_data", "")
         val impressionData: String = message.data.getOrDefault("impression_data", "")
+        val targetUrlData: String = message.data.getOrDefault("target_url_data", "")
 
         Log.d("NotixDebug", "Message received event=$event title=$title text=$text")
 
@@ -34,6 +35,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         intent.putExtra("event", event)
         intent.putExtra("click_data", clickData)
         intent.putExtra("impression_data", impressionData)
+        intent.putExtra("target_url_data", targetUrlData)
 
         ApiClient().impression(this, impressionData)
     }
