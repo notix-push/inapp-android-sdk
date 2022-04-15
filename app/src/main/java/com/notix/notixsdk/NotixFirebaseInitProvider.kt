@@ -22,28 +22,31 @@ class NotixFirebaseInitProvider {
 
         val firebaseMessaging = firebaseApp?.get(FirebaseMessaging::class.java) as FirebaseMessaging
         firebaseMessaging.token.addOnCompleteListener{
-            if (!it.isSuccessful) {
-                Log.d("NotixDebug", "Fetching token failed", it.exception)
-            }
+            if (it.isSuccessful) {
+                val token = it.result
+                Log.d("NotixDebug", "Token received $token")
 
-            val token = it.result
-            Log.d("NotixDebug", "Token received $token")
+                val availableToken = StorageProvider().getDeviceToken(context)
 
-            val availableToken = StorageProvider().getDeviceToken(context)
-
-            if ((availableToken == null && token != null) || availableToken != token) {
-                val appId = StorageProvider().getAppId(context)
-                val uuid = StorageProvider().getUUID(context)
-                val packageName = StorageProvider().getPackageName(context)
-                if (appId != null && packageName != null) {
-                    apiClient.subscribe(context, appId, uuid, packageName, token!!)
-                } else {
-                    Log.d("NotixDebug", "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)")
+                if ((availableToken == null && token != null) || availableToken != token) {
+                    val appId = StorageProvider().getAppId(context)
+                    val uuid = StorageProvider().getUUID(context)
+                    val packageName = StorageProvider().getPackageName(context)
+                    if (appId != null && packageName != null) {
+                        apiClient.subscribe(context, appId, uuid, packageName, token!!)
+                    } else {
+                        Log.d(
+                            "NotixDebug",
+                            "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)"
+                        )
+                    }
                 }
-            }
 
-            if (token != null) {
-                receiveTokenCallback(token)
+                if (token != null) {
+                    receiveTokenCallback(token)
+                }
+            } else  {
+                Log.d("NotixDebug", "Fetching token failed", it.exception)
             }
         }
 
