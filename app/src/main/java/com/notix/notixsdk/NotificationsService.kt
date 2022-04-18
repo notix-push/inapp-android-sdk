@@ -4,6 +4,7 @@ import android.app.*
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -11,8 +12,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import java.io.IOException
+import java.net.URL
+
 
 @Suppress("unused")
 class NotificationsService {
@@ -65,6 +70,7 @@ class NotificationsService {
         val text = intent.getStringExtra("text")
         val clickData = intent.getStringExtra("click_data")
         val targetUrlData = intent.getStringExtra("target_url_data")
+        val imageUrlData = intent.getStringExtra("image_url_data")
 
         val rootIntent : Intent
 
@@ -93,12 +99,31 @@ class NotificationsService {
             PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_ONE_SHOT)
         }
 
+        var image: Bitmap? = null
+
+        if (imageUrlData != null && imageUrlData != "") {
+            try {
+                val url = URL(imageUrlData)
+                image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+            } catch (e: IOException) {
+                Log.d(
+                    "NotixDebug",
+                    "Failed receive image by url: $imageUrlData , have ex: ${e.message} "
+                )
+            }
+        } else {
+            image = BitmapFactory.decodeResource(context.resources, notificationParameters.largeIcon)
+        }
+
         val channelId = context.getString(R.string.default_notification_channel_id)
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setDefaults(notificationParameters.defaults)
             .setSmallIcon(notificationParameters.smallIcon)
-            .setLargeIcon(BitmapFactory.decodeResource(context.resources, notificationParameters.largeIcon))
+            .setLargeIcon(image)
+            .setStyle(NotificationCompat.BigPictureStyle()
+                .bigPicture(image)
+                .bigLargeIcon(null))
             .setContentTitle(notificationParameters.title ?: title)
             .setContentText(notificationParameters.text ?: text)
             .setAutoCancel(true)
