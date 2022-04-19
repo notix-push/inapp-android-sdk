@@ -70,7 +70,8 @@ class NotificationsService {
         val text = intent.getStringExtra("text")
         val clickData = intent.getStringExtra("click_data")
         val targetUrlData = intent.getStringExtra("target_url_data")
-        val imageUrlData = intent.getStringExtra("image_url_data")
+        val iconUrl = intent.getStringExtra("icon_url")
+        val imageUrl = intent.getStringExtra("image_url")
 
         val rootIntent : Intent
 
@@ -99,28 +100,15 @@ class NotificationsService {
             PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_ONE_SHOT)
         }
 
-        var image: Bitmap? = null
-
-        if (imageUrlData != null && imageUrlData != "") {
-            try {
-                val url = URL(imageUrlData)
-                image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-            } catch (e: IOException) {
-                Log.d(
-                    "NotixDebug",
-                    "Failed receive image by url: $imageUrlData , have ex: ${e.message} "
-                )
-            }
-        } else {
-            image = BitmapFactory.decodeResource(context.resources, notificationParameters.largeIcon)
-        }
+        val icon: Bitmap? = loadImg(iconUrl)
+        val image: Bitmap? = loadImg(imageUrl)
 
         val channelId = context.getString(R.string.default_notification_channel_id)
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setDefaults(notificationParameters.defaults)
             .setSmallIcon(notificationParameters.smallIcon)
-            .setLargeIcon(image)
+            .setLargeIcon(icon ?: BitmapFactory.decodeResource(context.resources, notificationParameters.largeIcon))
             .setStyle(NotificationCompat.BigPictureStyle()
                 .bigPicture(image)
                 .bigLargeIcon(null))
@@ -147,5 +135,21 @@ class NotificationsService {
         }
 
         notificationManager.notify(0 /* ID of notification */, notificationBuilder)
+    }
+
+    private fun loadImg(imgUrl: String?) : Bitmap? {
+        if (imgUrl != null && imgUrl != "") {
+            try {
+                val url = URL(imgUrl)
+                return BitmapFactory.decodeStream(url.openConnection().getInputStream())
+            } catch (e: IOException) {
+                Log.d(
+                    "NotixDebug",
+                    "Failed receive image by url: $imgUrl , have ex: ${e.message} "
+                )
+            }
+        }
+
+        return null
     }
 }
