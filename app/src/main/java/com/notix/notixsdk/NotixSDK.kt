@@ -17,6 +17,9 @@ class NotixSDK: Service() {
     private val storage = StorageProvider()
     private val apiClient = ApiClient()
 
+    // public providers
+    val audiences: NotixAudienceProvider = NotixAudienceProvider()
+
     fun init(context: Context, notixAppId: String, notixToken: String) {
         this.init(context, notixAppId, notixToken, ::callbackStub)
     }
