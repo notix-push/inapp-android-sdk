@@ -95,7 +95,6 @@ class ApiClient {
         } catch (e: JSONException) {
             Log.d("NotixDebug", "invalid imression json: $impressionData, ${e.message}")
         }
-
     }
 
     fun click(context: Context, clickData: String?) {
@@ -170,6 +169,69 @@ class ApiClient {
 
         postRequest(context, url, headers, dataJson.toString()) {
             Log.d("NotixDebug", "version tracked")
+        }
+    }
+
+    fun addAudience(context: Context, audience: String) {
+        manageAudience(context, "add", audience)
+    }
+
+    fun deleteAudience(context: Context, audience: String) {
+        manageAudience(context, "delete", audience)
+    }
+
+    private fun manageAudience(context: Context, action: String, audience: String) {
+        if (action == "") {
+            Log.d("NotixDebug", "action is empty")
+            return
+        }
+
+        if (audience == "") {
+            Log.d("NotixDebug", "audience is empty")
+            return
+        }
+
+        val authToken = StorageProvider().getAuthToken(context)
+        if (authToken == null || authToken == "") {
+            Log.d("NotixDebug", "authToken is empty")
+            return
+        }
+
+        val appId = StorageProvider().getAppId(context)
+        if (appId == null) {
+            Log.d("NotixDebug", "app id is empty")
+            return
+        }
+
+        val uuid = StorageProvider().getUUID(context)
+        if (uuid == "") {
+            Log.d("NotixDebug", "uuid is empty")
+            return
+        }
+
+        val pubId = StorageProvider().getPubId(context)
+        if (pubId == 0) {
+            Log.d("NotixDebug", "pub id is empty")
+            return
+        }
+
+        val url = "$NOTIX_API_BASE_ROUTE/android/audiences?app_id=$appId"
+
+        val headers: MutableMap<String, String> = HashMap()
+        headers["Content-Type"] = "application/json"
+        headers["Authorization-Token"] = authToken
+        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+
+        val dataJson = JSONObject()
+        dataJson.put("action", action)
+        dataJson.put("uuid", uuid)
+        dataJson.put("app_id", appId)
+        dataJson.put("pub_id", pubId)
+        dataJson.put("audience", audience)
+
+
+        postRequest(context, url, headers, dataJson.toString()) {
+            Log.d("NotixDebug", "click tracked")
         }
     }
 
