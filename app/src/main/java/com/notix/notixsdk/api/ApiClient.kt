@@ -156,6 +156,13 @@ class ApiClient {
             return
         }
 
+        val packageName = StorageProvider().getPackageName(context)
+
+        if (packageName == "") {
+            Log.d("NotixDebug", "packageName is empty")
+            return
+        }
+
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
@@ -164,6 +171,7 @@ class ApiClient {
         dataJson.put("pub_id", pubId)
         dataJson.put("uuid", uuid)
         dataJson.put("version", version)
+        dataJson.put("package_name", packageName)
 
         Log.d("NotixDebug", "refresh: $dataJson")
 
