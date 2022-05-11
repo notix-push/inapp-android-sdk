@@ -12,18 +12,17 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
     lateinit var intent: Intent
     private var apiClient: ApiClient = ApiClient()
 
-    @RequiresApi(Build.VERSION_CODES.N)
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        val event: String = message.data.getOrDefault("event", "main")
-        val title: String = message.data.getOrDefault("title", "")
-        val text: String = message.data.getOrDefault("text", "")
-        val clickData: String = message.data.getOrDefault("click_data", "")
-        val impressionData: String = message.data.getOrDefault("impression_data", "")
-        val targetUrlData: String = message.data.getOrDefault("target_url_data", "")
-        val iconUrl: String = message.data.getOrDefault("icon_url", "")
-        val imageUrl: String = message.data.getOrDefault("image_url", "")
+        val event: String =  getValueFromData(message.data, "event", "main")
+        val title: String = getValueFromData(message.data, "title", "")
+        val text: String = getValueFromData(message.data, "text", "")
+        val clickData: String = getValueFromData(message.data, "click_data", "")
+        val impressionData: String = getValueFromData(message.data, "impression_data", "")
+        val targetUrlData: String = getValueFromData(message.data, "target_url_data", "")
+        val iconUrl: String = getValueFromData(message.data, "icon_url", "")
+        val imageUrl: String = getValueFromData(message.data, "image_url", "")
 
         Log.d("NotixDebug", "Message received event=$event title=$title text=$text")
 
@@ -42,6 +41,14 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         intent.putExtra("image_url", imageUrl)
 
         ApiClient().impression(this, impressionData)
+    }
+
+    private fun getValueFromData(data: Map<String, String>, key: String, default: String): String {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            data.getOrDefault(key, default)
+        } else {
+            data[key] ?: default;
+        }
     }
 
     override fun onNewToken(token: String) {
