@@ -19,6 +19,7 @@ class NotixSDK: Service() {
 
     // public providers
     val audiences: NotixAudienceProvider = NotixAudienceProvider()
+    val interstitial: NotixInterstitial = NotixInterstitial()
 
     fun init(context: Context, notixAppId: String, notixToken: String) {
         this.init(context, notixAppId, notixToken, ::callbackStub)
