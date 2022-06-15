@@ -15,13 +15,23 @@
             </intent-filter>
         </service-->
         <service
-            android:name="com.notix.notixsdk.NotixSDK"
-            android:exported="false">
-        </service>
+            android:name=".NotixSDK"
+            android:exported="false" />
+
         <activity
-            android:name="com.notix.notixsdk.NotificationClickHandlerActivity"
-            android:exported="false">
-        </activity>
+            android:name=".NotificationClickHandlerActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".interstitial.InterstitialActivity"
+            android:exported="false"
+            android:theme="@style/InterstitialTheme" />
     </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
 
 </manifest>

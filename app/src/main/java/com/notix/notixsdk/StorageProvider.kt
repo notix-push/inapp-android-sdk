@@ -14,6 +14,7 @@ class StorageProvider {
         const val NOTIX_PUB_ID = "NOTIX_PUB_ID"
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
         const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
+        const val NOTIX_INTERSTITIAL_PAYLOAD = "NOTIX_INTERSTITIAL_PAYLOAD"
     }
 
     @Synchronized
@@ -74,6 +75,14 @@ class StorageProvider {
 
     fun setPackageName(context: Context, packageName: String) {
         putString(context, NOTIX_PACKAGE_NAME, packageName)
+    }
+
+    fun getInterstitialPayload(context: Context): String? {
+        return getString(context, NOTIX_INTERSTITIAL_PAYLOAD)
+    }
+
+    fun setInterstitialPayload(context: Context, interstitialPayload: String) {
+        putString(context, NOTIX_INTERSTITIAL_PAYLOAD, interstitialPayload)
     }
 
     private fun putString(context: Context, key: String, value: String) {

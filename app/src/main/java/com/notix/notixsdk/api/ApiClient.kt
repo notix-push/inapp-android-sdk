@@ -7,6 +7,7 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.notix.notixsdk.StorageProvider
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
@@ -25,6 +26,7 @@ class ApiClient {
         val headers: MutableMap<String, String> = HashMap()
         headers["Authorization-Token"] = authToken
         headers["Content-Type"] = "application/json"
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         getRequest(context, url, headers) {
             try {
@@ -49,12 +51,60 @@ class ApiClient {
         }
     }
 
+    fun getInterstitial(context: Context, getInterstitialDoneCallback: () -> Unit) {
+        val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
+
+        val headers: MutableMap<String, String> = HashMap()
+        headers["Content-Type"] = "application/json"
+        headers["User-Agent"] = System.getProperty("http.agent")!!
+
+        val uuid = StorageProvider().getUUID(context)
+
+        if (uuid == "") {
+            Log.d("NotixDebug", "uuid is empty")
+            return
+        }
+
+        val appId = StorageProvider().getAppId(context)
+
+        if (appId == "") {
+            Log.d("NotixDebug", "app id is empty")
+            return
+        }
+
+        val pubId = StorageProvider().getPubId(context)
+
+        if (pubId == 0) {
+            Log.d("NotixDebug", "pub id is empty")
+            return
+        }
+
+        try {
+            val dataJson = JSONObject()
+            dataJson.put("user", uuid)
+            dataJson.put("app", appId)
+            dataJson.put("pt", 5)
+            dataJson.put("pid", pubId)
+
+            postRequest(context, url, headers, dataJson.toString()) {
+                storage.setInterstitialPayload(context, it)
+
+                getInterstitialDoneCallback()
+                Log.d("NotixDebug", "impression tracked")
+            }
+        } catch (e: JSONException) {
+            Log.d("NotixDebug", "invalid interstitial request appId: $appId, uuid: $uuid. ${e.message}")
+        }
+
+    }
+
     fun subscribe(context: Context, appId: String, uuid: String, packageName: String, token: String) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/android/subscribe"
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val dataJson = JSONObject()
         dataJson.put("uuid", uuid)
@@ -78,6 +128,7 @@ class ApiClient {
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val appId = StorageProvider().getAppId(context)
 
@@ -108,6 +159,7 @@ class ApiClient {
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val appId = StorageProvider().getAppId(context)
 
@@ -141,6 +193,7 @@ class ApiClient {
         headers["Content-Type"] = "application/json"
         headers["Authorization-Token"] = authToken
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val pubId = StorageProvider().getPubId(context)
 
@@ -229,6 +282,7 @@ class ApiClient {
         headers["Content-Type"] = "application/json"
         headers["Authorization-Token"] = authToken
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val dataJson = JSONObject()
         dataJson.put("action", action)
@@ -279,7 +333,7 @@ class ApiClient {
                 doResponse(response)
             },
             Response.ErrorListener { error ->
-                Log.d("NotixDebug", "api client error => $error")
+                Log.d("NotixDebug", "api client error")
             }
         ) {
             @Throws(AuthFailureError::class)
