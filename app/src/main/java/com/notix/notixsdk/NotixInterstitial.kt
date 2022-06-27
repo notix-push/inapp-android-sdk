@@ -1,6 +1,7 @@
 package com.notix.notixsdk
 
 import android.content.Context
+import android.util.Log
 import androidx.activity.ComponentActivity
 import com.notix.notixsdk.api.ApiClient
 import com.notix.notixsdk.interstitial.InterstitialData
@@ -14,6 +15,11 @@ class NotixInterstitial {
     private var interstitial: InterstitialProvider? = null
     private val apiClient = ApiClient()
     private val storage = StorageProvider()
+
+    @Volatile
+    private var isLoaded = false
+    @Volatile
+    private var showWaitLoad = false
 
     fun init(
         activity: ComponentActivity,
@@ -34,14 +40,33 @@ class NotixInterstitial {
     }
 
     fun load(context: Context, onLoadCallback: () -> Unit) {
-        apiClient.getInterstitial(context, onLoadCallback)
+        isLoaded = false
+
+        val onLoadCallbackForShow = {
+            isLoaded = true
+            if (showWaitLoad) {
+                show(context)
+            }
+            onLoadCallback()
+        }
+
+        apiClient.getInterstitial(context, onLoadCallbackForShow)
     }
 
     fun show(context: Context) {
+        if (!isLoaded) {
+            showWaitLoad = true
+            return
+        }
         val data = getInterstitialPayload(context)
         if (data != null) {
             interstitial?.showInterstitial(data)
+            showWaitLoad = false
         }
+    }
+
+    fun clear(context: Context) {
+        storage.clearInterstitial(context)
     }
 
     private fun getInterstitialPayload(context: Context): InterstitialData? {
@@ -57,17 +82,27 @@ class NotixInterstitial {
         val interstitialDtos = mutableListOf<InterstitialData>()
         for (i in 0 until dataJson.length()) {
             val item: JSONObject = dataJson.getJSONObject(i)
+
+            if (!validateInterstitialData(item)) {
+                Log.d("NotixDebug", "Interstitial item invalid. $item")
+                continue
+            }
+
             val interstitialDto = InterstitialData(
-                item.getString("title"),
-                item.getString("description"),
-                item.getString("image_url"),
-                item.getString("icon_url"),
-                item.getString("target_url"),
-                item.getBoolean("open_external_browser"),
-                item.getString("impression_data")
+                if (item.has("title")) item.getString("title") else "",
+                if (item.has("description")) item.getString("description") else "",
+                if (item.has("image_url")) item.getString("image_url") else "",
+                if (item.has("icon_url")) item.getString("icon_url") else "",
+                if (item.has("target_url")) item.getString("target_url") else "",
+                if (item.has("open_external_browser")) item.getBoolean("open_external_browser") else false,
+                if (item.has("impression_data")) item.getString("impression_data") else ""
             )
             interstitialDtos.add(interstitialDto)
         }
         return interstitialDtos
+    }
+
+    private fun validateInterstitialData(item: JSONObject): Boolean {
+        return item.has("title") && item.has("description") && item.has("image_url")
     }
 }
