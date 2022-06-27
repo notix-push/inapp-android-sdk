@@ -71,16 +71,11 @@ class NotixInterstitial {
 
     private fun getInterstitialPayload(context: Context): InterstitialData? {
         val interstitialSource = storage.getInterstitialPayload(context)
-        try {
-            val dataJson = JSONArray(interstitialSource)
-            val interstitialDtos = parsePayloadJson(dataJson)
+        val dataJson = JSONArray(interstitialSource)
+        val interstitialDtos = parsePayloadJson(dataJson)
 
-            //TODO experiment - first interstitial data
-            return interstitialDtos.firstOrNull()
-        } catch (e: Exception) {
-            Log.d("NotixDebug", "Interstitial parse failed (${e.message ?: ""}). Interstitial content - $interstitialSource")
-            return null
-        }
+        //TODO experiment - first interstitial data
+        return interstitialDtos.firstOrNull()
     }
 
     private fun parsePayloadJson(dataJson: JSONArray): List<InterstitialData> {
