@@ -135,4 +135,11 @@ class StorageProvider {
         )
         return sharedPrefs.getLong(key, 0)
     }
+
+    public fun clearInterstitial(context: Context) {
+        val sharedPrefs = context.getSharedPreferences(
+            NOTIX_INTERSTITIAL_PAYLOAD, Service.MODE_PRIVATE
+        )
+        sharedPrefs.edit().clear().apply();
+    }
 }

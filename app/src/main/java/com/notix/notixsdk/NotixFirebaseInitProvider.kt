@@ -18,10 +18,16 @@ class NotixFirebaseInitProvider {
             Log.d("NotixDebug", "Fetching sender id failed")
             return
         }
-        initFirebaseApp(context, NotixPublicAppId, NotixPublicProjectId, NotixPublicApiKey, senderId ?: NotixPublicSenderId)
+        initFirebaseApp(
+            context,
+            NotixPublicAppId,
+            NotixPublicProjectId,
+            NotixPublicApiKey,
+            senderId
+        )
 
         val firebaseMessaging = firebaseApp?.get(FirebaseMessaging::class.java) as FirebaseMessaging
-        firebaseMessaging.token.addOnCompleteListener{
+        firebaseMessaging.token.addOnCompleteListener {
             if (it.isSuccessful) {
                 val token = it.result
                 Log.d("NotixDebug", "Token received $token")
@@ -45,7 +51,7 @@ class NotixFirebaseInitProvider {
                 if (token != null) {
                     receiveTokenCallback(token)
                 }
-            } else  {
+            } else {
                 Log.d("NotixDebug", "Fetching token failed", it.exception)
             }
         }
@@ -53,7 +59,13 @@ class NotixFirebaseInitProvider {
         firebaseMessaging.isAutoInitEnabled = true
     }
 
-    private fun initFirebaseApp(context: Context, appId: String, projectId: String, apiKey: String, senderId: Long) {
+    private fun initFirebaseApp(
+        context: Context,
+        appId: String,
+        projectId: String,
+        apiKey: String,
+        senderId: Long
+    ) {
         val isAlreadyInitialized = isFirebaseAppAlreadyInitialized(context)
 
         if (!isAlreadyInitialized) {

@@ -7,7 +7,6 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.notix.notixsdk.StorageProvider
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
@@ -20,7 +19,12 @@ class ApiClient {
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
     }
 
-    fun getConfig(context: Context, appId: String, authToken: String, getConfigDoneCallback: () -> Unit) {
+    fun getConfig(
+        context: Context,
+        appId: String,
+        authToken: String,
+        getConfigDoneCallback: () -> Unit
+    ) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
@@ -93,12 +97,21 @@ class ApiClient {
                 Log.d("NotixDebug", "impression tracked")
             }
         } catch (e: JSONException) {
-            Log.d("NotixDebug", "invalid interstitial request appId: $appId, uuid: $uuid. ${e.message}")
+            Log.d(
+                "NotixDebug",
+                "invalid interstitial request appId: $appId, uuid: $uuid. ${e.message}"
+            )
         }
 
     }
 
-    fun subscribe(context: Context, appId: String, uuid: String, packageName: String, token: String) {
+    fun subscribe(
+        context: Context,
+        appId: String,
+        uuid: String,
+        packageName: String,
+        token: String
+    ) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/android/subscribe"
 
         val headers: MutableMap<String, String> = HashMap()
@@ -297,7 +310,12 @@ class ApiClient {
         }
     }
 
-    private fun getRequest(context: Context, url: String, headers: MutableMap<String, String>, doResponse: (response: String) -> Unit) {
+    private fun getRequest(
+        context: Context,
+        url: String,
+        headers: MutableMap<String, String>,
+        doResponse: (response: String) -> Unit
+    ) {
         val queue = Volley.newRequestQueue(context)
 
         val stringRequest: StringRequest = object : StringRequest(
@@ -319,11 +337,14 @@ class ApiClient {
         queue.add(stringRequest)
     }
 
-    private fun postRequest(context: Context,
-                            url: String,
-                            headers: MutableMap<String, String>,
-                            body: String,
-                            doResponse: (response: String) -> Unit) {
+    private fun postRequest(
+        context: Context,
+        url: String,
+        headers: MutableMap<String, String>,
+        body: String,
+        doResponse: (response: String) -> Unit,
+
+    ) {
         val queue = Volley.newRequestQueue(context)
 
         val stringRequest: StringRequest = object : StringRequest(
