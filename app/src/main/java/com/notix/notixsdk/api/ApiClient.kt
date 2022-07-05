@@ -55,7 +55,7 @@ class ApiClient {
         }
     }
 
-    fun getInterstitial(context: Context, getInterstitialDoneCallback: () -> Unit) {
+    fun getInterstitial(context: Context, requestVar: String?, getInterstitialDoneCallback: () -> Unit) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
 
         val headers: MutableMap<String, String> = HashMap()
@@ -89,6 +89,9 @@ class ApiClient {
             dataJson.put("app", appId)
             dataJson.put("pt", 5)
             dataJson.put("pid", pubId)
+            if (requestVar != null && requestVar != "") {
+                dataJson.put("rv", requestVar)
+            }
 
             postRequest(context, url, headers, dataJson.toString()) {
                 storage.setInterstitialPayload(context, it)
@@ -289,6 +292,13 @@ class ApiClient {
             return
         }
 
+        val packageName = StorageProvider().getPackageName(context)
+
+        if (packageName == "") {
+            Log.d("NotixDebug", "packageName is empty")
+            return
+        }
+
         val url = "$NOTIX_API_BASE_ROUTE/android/audiences?app_id=$appId"
 
         val headers: MutableMap<String, String> = HashMap()
@@ -303,6 +313,7 @@ class ApiClient {
         dataJson.put("app_id", appId)
         dataJson.put("pub_id", pubId)
         dataJson.put("audience", audience)
+        dataJson.put("package_name", packageName)
 
 
         postRequest(context, url, headers, dataJson.toString()) {

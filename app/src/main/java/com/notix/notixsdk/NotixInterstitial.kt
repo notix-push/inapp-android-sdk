@@ -40,6 +40,10 @@ class NotixInterstitial {
     }
 
     fun load(context: Context, onLoadCallback: () -> Unit) {
+     this.load(context, null, onLoadCallback)
+    }
+
+    fun load(context: Context, requestVar: String?, onLoadCallback: () -> Unit) {
         isLoaded = false
 
         val onLoadCallbackForShow = {
@@ -50,7 +54,7 @@ class NotixInterstitial {
             onLoadCallback()
         }
 
-        apiClient.getInterstitial(context, onLoadCallbackForShow)
+        apiClient.getInterstitial(context, requestVar, onLoadCallbackForShow)
     }
 
     fun show(context: Context) {
@@ -58,7 +62,9 @@ class NotixInterstitial {
             showWaitLoad = true
             return
         }
+
         val data = getInterstitialPayload(context)
+
         if (data != null) {
             interstitial?.showInterstitial(data)
             showWaitLoad = false
