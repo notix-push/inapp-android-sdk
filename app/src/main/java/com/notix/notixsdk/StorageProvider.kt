@@ -22,7 +22,7 @@ class StorageProvider {
         var uniqueID = getString(context, NOTIX_PREF_UNIQUE_ID)
 
         if (uniqueID == null) {
-            uniqueID = UUID.randomUUID().toString()
+            uniqueID = UUID.randomUUID().toString().replace("-", "")
             putString(context, NOTIX_PREF_UNIQUE_ID, uniqueID)
         }
 
@@ -136,7 +136,7 @@ class StorageProvider {
         return sharedPrefs.getLong(key, 0)
     }
 
-    public fun clearInterstitial(context: Context) {
+    fun clearInterstitial(context: Context) {
         val sharedPrefs = context.getSharedPreferences(
             NOTIX_INTERSTITIAL_PAYLOAD, Service.MODE_PRIVATE
         )
