@@ -13,22 +13,23 @@ import androidx.annotation.ColorInt
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.palette.graphics.Palette
+import androidx.lifecycle.lifecycleScope
 import coil.imageLoader
 import coil.load
 import coil.request.ImageRequest
 import com.commit451.coiltransformations.BlurTransformation
 import com.notix.notixsdk.R
 import com.notix.notixsdk.api.ApiClient
-import com.notix.notixsdk.utils.canHandleBrowserIntent
-import com.notix.notixsdk.utils.dp
-import com.notix.notixsdk.utils.hasCustomTabsBrowser
+import com.notix.notixsdk.utils.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import java.lang.ref.WeakReference
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 internal class InterstitialActivity : AppCompatActivity() {
 
@@ -40,6 +41,7 @@ internal class InterstitialActivity : AppCompatActivity() {
     private val background: ImageView by lazy { findViewById(R.id.interstitial_background) }
     private val titleText: TextView by lazy { findViewById(R.id.interstitial_title) }
     private val descriptionText: TextView by lazy { findViewById(R.id.interstitial_description) }
+    private val button: TextView by lazy { findViewById(R.id.interstitial_button) }
     private val closeButton: View by lazy { findViewById(R.id.interstitial_close) }
     private val progressView: View by lazy { findViewById(R.id.interstitial_progress) }
 
@@ -56,9 +58,9 @@ internal class InterstitialActivity : AppCompatActivity() {
             closeInterstitial(InterstitialContract.RESULT_ERROR)
             return
         }
-        composeInterstitial(data)
-        setCloseListener()
-        setClickListener(data)
+        lifecycleScope.safeLaunch {
+            composeInterstitial(data)
+        }
     }
 
     private fun prepareActivity() {
@@ -86,81 +88,110 @@ internal class InterstitialActivity : AppCompatActivity() {
         closeButton.layoutParams = layoutParams
     }
 
-    private fun composeInterstitial(data: InterstitialData) {
-        loadImage(data.imageUrl) { drawable ->
-            progressView.isVisible = false
-            closeButton.isVisible = true
-            image.setImageDrawable(drawable)
-            generateColors(drawable) { textColor, background ->
-                drawTexts(data, textColor, background)
-            }
-            apiClient.impression(this, data.impressionData)
-        }
-        setBlurredBackground(data.imageUrl)
+    private suspend fun composeInterstitial(data: InterstitialData) {
+        val drawable = loadImage(data.imageUrl)
+        progressView.isVisible = false
+        image.setImageDrawable(drawable)
+        setBlurredBackground(drawable)
+        configureControls(data, drawable)
+        apiClient.impression(this, data.impressionData)
     }
 
-    private fun drawTexts(data: InterstitialData, textColor: Int, background: Drawable) {
-        titleText.background = background
-        descriptionText.background = background
-        titleText.setTextColor(textColor)
-        descriptionText.setTextColor(textColor)
-        setTexts(data)
-    }
-
-    private fun loadImage(url: String, callback: (Drawable?) -> Unit) {
+    private suspend fun loadImage(url: String): Drawable? = suspendCoroutine { continuation ->
         ImageRequest.Builder(this)
             .data(url)
             .allowHardware(false)
             .target(
-                onSuccess = callback,
-                onError = { closeInterstitial(InterstitialContract.RESULT_ERROR) }
+                onSuccess = { continuation.resume(it) },
+                onError = {
+                    continuation.resume(it)
+                    closeInterstitial(InterstitialContract.RESULT_ERROR)
+                }
             )
             .build()
             .also(imageLoader::enqueue)
     }
 
-    private fun setBlurredBackground(url: String) {
-        background.load(url) {
+    private fun setBlurredBackground(image: Drawable?) {
+        if (image == null) return
+        background.load(image) {
             transformations(BlurTransformation(this@InterstitialActivity))
         }
     }
 
-    private fun generateColors(
-        drawable: Drawable?,
-        callback: (textColor: Int, background: Drawable) -> Unit
-    ) {
-        if (drawable == null) {
-            val textBackgroundColor = ContextCompat.getColor(this, R.color.notix_interstitial_text_background_color)
-            val textColor = ContextCompat.getColor(this, R.color.notix_interstitial_text_color)
-            val textBackground = generateTextBackground(textBackgroundColor)
-            callback(textColor, textBackground)
+    private suspend fun configureControls(data: InterstitialData, drawable: Drawable?) {
+        val colors = ColorPairsGenerator.generate(this, drawable)
+        // use primary color for button if it exists for text, otherwise
+        val textColors = if (data.buttons.isNotEmpty()) {
+            colors.getOrNull(1) ?: colors.first()
         } else {
-            val bitmap = drawable.toBitmap()
-            Palette.from(bitmap).generate { palette ->
-                val swatch = palette?.vibrantSwatch ?: palette?.lightVibrantSwatch ?: palette?.darkVibrantSwatch
+            colors.first()
+        }
+        val buttonColors = colors.first()
+        drawTexts(data, textColors)
+        drawButtons(data, buttonColors)
+        configureCloseButton(data)
+        setCloseListener()
+        setClickListener(data)
+    }
 
-                val textBackgroundColor = swatch?.rgb
-                    ?: swatch?.rgb
-                    ?: ContextCompat.getColor(this, R.color.notix_interstitial_text_background_color)
+    private fun drawTexts(data: InterstitialData, colorsPair: Pair<Int, Int>) {
+        val textColor = colorsPair.first
+        val textBackground = generateBackgroundDrawable(colorsPair.second, 4.dp)
+        titleText.background = textBackground
+        descriptionText.background = textBackground
+        titleText.setTextColor(textColor)
+        descriptionText.setTextColor(textColor)
+        titleText.text = data.title
+        descriptionText.text = data.description
+    }
 
-                val textColor = swatch?.bodyTextColor
-                    ?: ContextCompat.getColor(this, R.color.notix_interstitial_text_color)
-
-                val textBackground = generateTextBackground(textBackgroundColor)
-                callback(textColor, textBackground)
-            }
+    private fun drawButtons(data: InterstitialData, colorsPair: Pair<Int, Int>) {
+        val buttonSpec = data.buttons.firstOrNull() ?: return
+        val buttonColor = colorsPair.first
+        val buttonBackground = generateBackgroundDrawable(colorsPair.second, 16.dp)
+        with(button) {
+            visibility = View.VISIBLE
+            text = buttonSpec.text
+            background = buttonBackground
+            setTextColor(buttonColor)
         }
     }
 
-    private fun generateTextBackground(@ColorInt color: Int) =
+    private fun generateBackgroundDrawable(@ColorInt color: Int, radius: Float) =
         GradientDrawable().apply {
             setColor(color)
-            cornerRadius = 4.dp
+            cornerRadius = radius
         }
 
-    private fun setTexts(data: InterstitialData) {
-        titleText.text = data.title
-        descriptionText.text = data.description
+    private fun configureCloseButton(data: InterstitialData) {
+        val closingSettings = data.closingSettings
+        val showButtonTime = System.currentTimeMillis() + closingSettings.timeout * 1000
+        lifecycleScope.safeLaunch {
+            val buttonWR = WeakReference(closeButton)
+            while (isActive) {
+                if (System.currentTimeMillis() >= showButtonTime) {
+                    buttonWR.get()?.visibility = View.VISIBLE
+                    break
+                }
+                delay(1000)
+            }
+        }
+
+        if (closingSettings.opacity in 0f..1f) {
+            closeButton.alpha = closingSettings.opacity
+        }
+
+        val sizeMultiplier = closingSettings.sizePercent
+        if (sizeMultiplier in 0f..2f) {
+            val layoutParams = (closeButton.layoutParams as? ConstraintLayout.LayoutParams)
+                ?.apply {
+                    val size = (closeButton.layoutParams.width * sizeMultiplier).toInt()
+                    width = size
+                    height = size
+                }
+            closeButton.layoutParams = layoutParams
+        }
     }
 
     private fun setCloseListener() {
@@ -170,26 +201,37 @@ internal class InterstitialActivity : AppCompatActivity() {
     }
 
     private fun setClickListener(data: InterstitialData) {
-        val clickListener = View.OnClickListener {
-            navigateToUrl(data)
-            closeInterstitial(InterstitialContract.RESULT_CLICKED)
-        }
+        val clickListener = composeClickListener(data.targetUrl, data.openExternalBrowser)
         image.setOnClickListener(clickListener)
         background.setOnClickListener(clickListener)
         titleText.setOnClickListener(clickListener)
         descriptionText.setOnClickListener(clickListener)
+
+        if (data.buttons.isNotEmpty()) {
+            val btnClickListener = data.buttons.first().targetUrl?.let { btnTargetUrl ->
+                composeClickListener(btnTargetUrl, data.openExternalBrowser)
+            } ?: clickListener
+            button.setOnClickListener(btnClickListener)
+        }
     }
 
-    private fun navigateToUrl(data: InterstitialData) {
-        if (data.targetUrl.isBlank()) {
-            Log.d("NotixDebug", "Target url is empty")
-            return
-        }
-        val uri = Uri.parse(data.targetUrl)
-        if (data.openExternalBrowser) {
-            openBrowser(uri)
-        } else {
-            openCustomTabsBrowser(uri)
+    private fun composeClickListener(url: String, isExternal: Boolean) = View.OnClickListener {
+        navigateToUrl(url, isExternal)
+        closeInterstitial(InterstitialContract.RESULT_CLICKED)
+    }
+
+    private fun navigateToUrl(url: String, isExternal: Boolean) {
+        when {
+            url.isBlank() -> Log.d("NotixDebug", "Target url is empty")
+            !url.contains("http") -> Log.d("NotixDebug", "Target url must contains http")
+            else -> {
+                val uri = Uri.parse(url)
+                if (isExternal) {
+                    openBrowser(uri)
+                } else {
+                    openCustomTabsBrowser(uri)
+                }
+            }
         }
     }
 

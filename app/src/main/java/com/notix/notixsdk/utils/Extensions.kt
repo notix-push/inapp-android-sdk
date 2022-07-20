@@ -5,6 +5,13 @@ import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsService
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 internal fun Context.getBrowserIntentPackages(): List<ResolveInfo> {
     // Get default VIEW intent handler.
@@ -32,4 +39,18 @@ internal fun Context.hasCustomTabsBrowser(): Boolean {
         }
     }
     return packagesSupportingCustomTabs.isNotEmpty()
+}
+
+internal inline fun <reified T> JSONObject.getOrFallback(name: String, fallback: T): T =
+    if (this.has(name)) (this.get(name) as? T) ?: fallback else fallback
+
+fun CoroutineScope.safeLaunch(
+    context: CoroutineContext = EmptyCoroutineContext,
+    errorBlock: (Throwable) -> Unit = {},
+    block: suspend CoroutineScope.() -> Unit,
+): Job {
+    val errorHandler = CoroutineExceptionHandler { _, throwable ->
+        errorBlock(throwable)
+    }
+    return launch(context + errorHandler, block = block)
 }

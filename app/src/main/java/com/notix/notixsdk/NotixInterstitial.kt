@@ -4,30 +4,38 @@ import android.content.Context
 import android.util.Log
 import androidx.activity.ComponentActivity
 import com.notix.notixsdk.api.ApiClient
-import com.notix.notixsdk.interstitial.InterstitialData
-import com.notix.notixsdk.interstitial.InterstitialProvider
-import com.notix.notixsdk.interstitial.InterstitialResult
+import com.notix.notixsdk.interstitial.*
+import com.notix.notixsdk.utils.getOrFallback
 import org.json.JSONArray
 import org.json.JSONObject
 
-class NotixInterstitial {
+class NotixInterstitial private constructor() {
 
-    private var interstitial: InterstitialProvider? = null
+    private var provider: InterstitialProvider? = null
     private val apiClient = ApiClient()
     private val storage = StorageProvider()
 
     @Volatile
     private var isLoaded = false
+
     @Volatile
     private var showWaitLoad = false
 
-    fun init(
+    private var customButtons: List<InterstitialButton>? = null
+    private var closingSettings: ClosingSettings? = null
+
+    private fun init(
         activity: ComponentActivity,
-        interstitialClicked: () -> Unit = {},
-        interstitialDismissed: () -> Unit = {},
-        interstitialError: () -> Unit = {},
+        interstitialClicked: () -> Unit,
+        interstitialDismissed: () -> Unit,
+        interstitialError: () -> Unit,
+        customButtons: List<InterstitialButton>?,
+        closingSettings: ClosingSettings?,
     ) {
-        this.interstitial = InterstitialProvider(
+        clear(activity)
+        this.customButtons = customButtons
+        this.closingSettings = closingSettings
+        this.provider = InterstitialProvider(
             registry = activity.activityResultRegistry,
             callback = { result ->
                 when (result) {
@@ -39,11 +47,7 @@ class NotixInterstitial {
         ).also(activity.lifecycle::addObserver)
     }
 
-    fun load(context: Context, onLoadCallback: () -> Unit) {
-     this.load(context, null, onLoadCallback)
-    }
-
-    fun load(context: Context, requestVar: String?, onLoadCallback: () -> Unit) {
+    fun load(context: Context, requestVar: String? = null, onLoadCallback: () -> Unit) {
         isLoaded = false
 
         val onLoadCallbackForShow = {
@@ -64,15 +68,19 @@ class NotixInterstitial {
         }
 
         val data = getInterstitialPayload(context)
+            ?.run { this@NotixInterstitial.customButtons?.let { this.copy(buttons = it) } ?: this }
+            ?.run { this@NotixInterstitial.closingSettings?.let { this.copy(closingSettings = it) } ?: this }
 
         if (data != null) {
-            interstitial?.showInterstitial(data)
+            provider?.showInterstitial(data)
             showWaitLoad = false
         }
     }
 
     fun clear(context: Context) {
         storage.clearInterstitial(context)
+        customButtons = null
+        closingSettings = null
     }
 
     private fun getInterstitialPayload(context: Context): InterstitialData? {
@@ -95,13 +103,17 @@ class NotixInterstitial {
             }
 
             val interstitialDto = InterstitialData(
-                if (item.has("title")) item.getString("title") else "",
-                if (item.has("description")) item.getString("description") else "",
-                if (item.has("image_url")) item.getString("image_url") else "",
-                if (item.has("icon_url")) item.getString("icon_url") else "",
-                if (item.has("target_url")) item.getString("target_url") else "",
-                if (item.has("open_external_browser")) item.getBoolean("open_external_browser") else false,
-                if (item.has("impression_data")) item.getString("impression_data") else ""
+                title = item.getOrFallback("title", ""),
+                description = item.getOrFallback("description", ""),
+                imageUrl = item.getOrFallback("image_url", ""),
+                iconUrl = item.getOrFallback("icon_url", ""),
+                targetUrl = item.getOrFallback("target_url", ""),
+                openExternalBrowser = item.getOrFallback("open_external_browser", false),
+                // TODO not working for json object string
+                //impressionData = item.getOrFallback("impression_data", ""),
+                if (item.has("impression_data")) item.getString("impression_data") else "",
+                buttons = emptyList(),
+                closingSettings = ClosingSettings(timeout = 5, opacity = 1f, sizePercent = 1f),
             )
             interstitialDtos.add(interstitialDto)
         }
@@ -110,5 +122,33 @@ class NotixInterstitial {
 
     private fun validateInterstitialData(item: JSONObject): Boolean {
         return item.has("title") && item.has("description") && item.has("image_url")
+    }
+
+    companion object {
+        inline fun build(
+            activity: ComponentActivity,
+            builder: Builder.() -> Unit,
+        ) = Builder(activity).apply(builder).build()
+    }
+
+    class Builder(
+        private val activity: ComponentActivity,
+    ) {
+        var interstitialClicked: () -> Unit = {}
+        var interstitialDismissed: () -> Unit = {}
+        var interstitialError: () -> Unit = {}
+        var customButtons: List<InterstitialButton>? = null
+        var closingSettings: ClosingSettings? = null
+
+        fun build() = NotixInterstitial().apply {
+            init(
+                activity = activity,
+                interstitialClicked = interstitialClicked,
+                interstitialDismissed = interstitialDismissed,
+                interstitialError = interstitialError,
+                customButtons = this@Builder.customButtons,
+                closingSettings = this@Builder.closingSettings,
+            )
+        }
     }
 }

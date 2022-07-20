@@ -3,11 +3,13 @@ package com.notix.notixsdk
 import android.app.Service
 import android.content.Context
 import android.content.SharedPreferences
+import android.text.format.DateFormat
 import java.util.*
 
 class StorageProvider {
     companion object {
         const val NOTIX_PREF_UNIQUE_ID = "NOTIX_PREF_UNIQUE_ID"
+        const val NOTIX_CREATED_DATE = "NOTIX_CREATED_DATE"
         const val NOTIX_REMOTE_SENDER_ID = "NOTIX_REMOTE_SENDER_ID"
         const val NOTIX_APP_ID = "NOTIX_APP_ID"
         const val NOTIX_AUTH_TOKEN = "NOTIX_AUTH_TOKEN"
@@ -26,7 +28,22 @@ class StorageProvider {
             putString(context, NOTIX_PREF_UNIQUE_ID, uniqueID)
         }
 
+        //TODO try make CreatedDate
+        getCreatedDate(context)
+
         return uniqueID
+    }
+
+    @Synchronized
+    fun getCreatedDate(context: Context): String {
+        var createdDate = getString(context, NOTIX_CREATED_DATE)
+
+        if (createdDate == null) {
+            createdDate = DateFormat.format("yyyy-MM-dd HH:mm:ss", Date()).toString()
+            putString(context, NOTIX_CREATED_DATE, createdDate)
+        }
+
+        return createdDate
     }
 
     fun getSenderId(context: Context): Long {
