@@ -12,7 +12,7 @@ class NotixFirebaseInitProvider {
     private val storage = StorageProvider()
     private val apiClient = ApiClient()
 
-    fun init(context: Context, receiveTokenCallback: (String) -> String) {
+    fun init(context: Context, receiveTokenCallback: (String) -> Unit) {
         val senderId = storage.getSenderId(context)
         if (senderId == 0L) {
             Log.d("NotixDebug", "Fetching sender id failed")

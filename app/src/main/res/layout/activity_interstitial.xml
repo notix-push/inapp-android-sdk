@@ -21,7 +21,6 @@
         android:id="@+id/interstitial_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
         android:gravity="center"
         android:paddingHorizontal="8dp"
         android:paddingVertical="4dp"
@@ -39,7 +38,6 @@
         android:id="@+id/interstitial_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
         android:gravity="center"
         android:paddingHorizontal="8dp"
         android:paddingVertical="4dp"
@@ -51,6 +49,25 @@
         app:layout_constraintVertical_bias="0.8"
         app:layout_constraintWidth_max="320dp"
         tools:text="Hello World! Hello World! Hello World!" />
+
+    <TextView
+        android:id="@+id/interstitial_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:lines="1"
+        android:maxWidth="320dp"
+        android:minWidth="200dp"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="16dp"
+        android:textAllCaps="true"
+        android:textSize="24sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/interstitial_description"
+        tools:text="Hello World" />
 
     <ImageView
         android:id="@+id/interstitial_close"

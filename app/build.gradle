@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.25'
+    sdkVersion = '0.0.26'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -75,6 +75,9 @@ dependencies {
     implementation "io.coil-kt:coil:2.1.0"
     implementation "com.github.Commit451.coil-transformations:transformations:2.0.2"
     implementation "androidx.palette:palette-ktx:1.0.0"
+
+    // coroutines
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.0"
 }
 
 afterEvaluate {

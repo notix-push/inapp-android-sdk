@@ -60,12 +60,19 @@ class ApiClient {
 
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
+        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
         headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val uuid = StorageProvider().getUUID(context)
 
         if (uuid == "") {
             Log.d("NotixDebug", "uuid is empty")
+            return
+        }
+
+        val createdDate = StorageProvider().getCreatedDate(context)
+        if (createdDate == "") {
+            Log.d("NotixDebug", "createdDate is empty")
             return
         }
 
@@ -87,8 +94,9 @@ class ApiClient {
             val dataJson = JSONObject()
             dataJson.put("user", uuid)
             dataJson.put("app", appId)
-            dataJson.put("pt", 5)
+            dataJson.put("pt", 3)
             dataJson.put("pid", pubId)
+            dataJson.put("cd", createdDate)
             if (requestVar != null && requestVar != "") {
                 dataJson.put("rv", requestVar)
             }
@@ -97,7 +105,7 @@ class ApiClient {
                 storage.setInterstitialPayload(context, it)
 
                 getInterstitialDoneCallback()
-                Log.d("NotixDebug", "impression tracked")
+                Log.d("NotixDebug", "interstitial loaded")
             }
         } catch (e: JSONException) {
             Log.d(
@@ -122,11 +130,17 @@ class ApiClient {
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
         headers["User-Agent"] = System.getProperty("http.agent")!!
 
+        val createdDate = StorageProvider().getCreatedDate(context)
+        if (createdDate == "") {
+            Log.d("NotixDebug", "createdDate is empty")
+        }
+
         val dataJson = JSONObject()
         dataJson.put("uuid", uuid)
         dataJson.put("package_name", packageName)
         dataJson.put("appId", appId)
         dataJson.put("token", token)
+        dataJson.put("created_date", createdDate)
 
         postRequest(context, url, headers, dataJson.toString()) {
             StorageProvider().setDeviceToken(context, token)
@@ -160,7 +174,7 @@ class ApiClient {
                 Log.d("NotixDebug", "impression tracked")
             }
         } catch (e: JSONException) {
-            Log.d("NotixDebug", "invalid imression json: $impressionData, ${e.message}")
+            Log.d("NotixDebug", "invalid impression json: $impressionData, ${e.message}")
         }
     }
 
@@ -192,7 +206,7 @@ class ApiClient {
                 Log.d("NotixDebug", "click tracked")
             }
         } catch (e: JSONException) {
-            Log.d("NotixDebug", "invalid imression json: $clickData, ${e.message}")
+            Log.d("NotixDebug", "invalid click json: $clickData, ${e.message}")
         }
     }
 
@@ -317,7 +331,7 @@ class ApiClient {
 
 
         postRequest(context, url, headers, dataJson.toString()) {
-            Log.d("NotixDebug", "click tracked")
+            Log.d("NotixDebug", "audience managed")
         }
     }
 

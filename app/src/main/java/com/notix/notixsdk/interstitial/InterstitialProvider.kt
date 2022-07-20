@@ -5,7 +5,7 @@ import androidx.activity.result.ActivityResultRegistry
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
-class InterstitialProvider(
+internal class InterstitialProvider(
     private val registry: ActivityResultRegistry,
     private val callback: (InterstitialResult) -> Unit,
 ) : DefaultLifecycleObserver {
