@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.26'
+    sdkVersion = '0.0.27'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -63,7 +63,7 @@ dependencies {
         exclude group: "org.apache.httpcomponents", module: "httpclient"
         exclude group: "org.apache.httpcomponents", module: "httpcore"
     }
-    implementation ('com.google.firebase:firebase-core:21.0.0') {
+    implementation ('com.google.firebase:firebase-core:21.1.0') {
         exclude group: "org.apache.httpcomponents", module: "httpclient"
         exclude group: "org.apache.httpcomponents", module: "httpcore"
     }

@@ -18,6 +18,16 @@ class NotixSDK {
         notixToken: String,
         receiveTokenCallback: ((String) -> Unit)? = null,
     ) {
+        init(context, notixAppId, notixToken, "", receiveTokenCallback)
+    }
+
+    fun init(
+        context: Context,
+        notixAppId: String,
+        notixToken: String,
+        requestVar: String,
+        receiveTokenCallback: ((String) -> Unit)? = null,
+    ) {
         val receiveTokenEnrichCallback: (String) -> Unit = { data ->
             apiClient.refresh(context, notixAppId, notixToken)
             receiveTokenCallback?.invoke(data)
@@ -26,6 +36,7 @@ class NotixSDK {
         val initFirebaseProvider = {
             storage.setPackageName(context, context.packageName)
             storage.setAuthToken(context, notixToken)
+            storage.setPushRequestVar(context, requestVar)
             storage.getUUID(context)
 
 

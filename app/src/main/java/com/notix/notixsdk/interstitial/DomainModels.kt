@@ -17,6 +17,8 @@ internal data class InterstitialData(
 data class InterstitialButton(
     val text: String,
     val targetUrl: String? = null,  // InterstitialData.targetUrl is used if null
+    val textColor: String? = null,  // Generated color is used if null
+    val backgroundColor: String? = null,  // Generated color is used if null
 ) : Serializable
 
 data class ClosingSettings(
