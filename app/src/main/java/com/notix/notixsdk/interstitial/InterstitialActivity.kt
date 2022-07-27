@@ -148,13 +148,16 @@ internal class InterstitialActivity : AppCompatActivity() {
 
     private fun drawButtons(data: InterstitialData, colorsPair: Pair<Int, Int>) {
         val buttonSpec = data.buttons.firstOrNull() ?: return
-        val buttonColor = colorsPair.first
-        val buttonBackground = generateBackgroundDrawable(colorsPair.second, 16.dp)
+        val customTextColor = Colors.parseColor(buttonSpec.textColor)
+        val customBackgroundColor = Colors.parseColor(buttonSpec.backgroundColor)
+        val buttonTextColor = customTextColor ?: colorsPair.first
+        val buttonBackgroundColor = customBackgroundColor ?: colorsPair.second
+        val buttonBackground = generateBackgroundDrawable(buttonBackgroundColor, 16.dp)
         with(button) {
             visibility = View.VISIBLE
             text = buttonSpec.text
             background = buttonBackground
-            setTextColor(buttonColor)
+            setTextColor(buttonTextColor)
         }
     }
 

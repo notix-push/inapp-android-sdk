@@ -19,6 +19,15 @@ class ApiClient {
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
     }
 
+    private fun getMainHeaders(): MutableMap<String, String> {
+        val headers: MutableMap<String, String> = HashMap()
+        headers["Content-Type"] = "application/json"
+        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+        headers["User-Agent"] = System.getProperty("http.agent")!!
+
+        return headers
+    }
+
     fun getConfig(
         context: Context,
         appId: String,
@@ -27,10 +36,8 @@ class ApiClient {
     ) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
-        val headers: MutableMap<String, String> = HashMap()
+        val headers = getMainHeaders()
         headers["Authorization-Token"] = authToken
-        headers["Content-Type"] = "application/json"
-        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         getRequest(context, url, headers) {
             try {
@@ -58,10 +65,7 @@ class ApiClient {
     fun getInterstitial(context: Context, requestVar: String?, getInterstitialDoneCallback: () -> Unit) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
+        val headers = getMainHeaders()
 
         val uuid = StorageProvider().getUUID(context)
 
@@ -125,15 +129,14 @@ class ApiClient {
     ) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/android/subscribe"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
+        val headers = getMainHeaders()
 
         val createdDate = StorageProvider().getCreatedDate(context)
         if (createdDate == "") {
             Log.d("NotixDebug", "createdDate is empty")
         }
+
+        val requestVar = StorageProvider().getPushRequestVar(context)
 
         val dataJson = JSONObject()
         dataJson.put("uuid", uuid)
@@ -141,6 +144,10 @@ class ApiClient {
         dataJson.put("appId", appId)
         dataJson.put("token", token)
         dataJson.put("created_date", createdDate)
+
+        if (requestVar != null && requestVar != "") {
+            dataJson.put("var", requestVar)
+        }
 
         postRequest(context, url, headers, dataJson.toString()) {
             StorageProvider().setDeviceToken(context, token)
@@ -155,10 +162,7 @@ class ApiClient {
 
         val url = "$NOTIX_EVENTS_BASE_ROUTE/event"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
+        val headers = getMainHeaders()
 
         val appId = StorageProvider().getAppId(context)
 
@@ -186,10 +190,7 @@ class ApiClient {
 
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ck"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
+        val headers = getMainHeaders()
 
         val appId = StorageProvider().getAppId(context)
 
@@ -219,11 +220,8 @@ class ApiClient {
 
         val url = "$NOTIX_API_BASE_ROUTE/refresh?app_id=$appId"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
+        val headers = getMainHeaders()
         headers["Authorization-Token"] = authToken
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val pubId = StorageProvider().getPubId(context)
 
@@ -315,11 +313,8 @@ class ApiClient {
 
         val url = "$NOTIX_API_BASE_ROUTE/android/audiences?app_id=$appId"
 
-        val headers: MutableMap<String, String> = HashMap()
-        headers["Content-Type"] = "application/json"
+        val headers = getMainHeaders()
         headers["Authorization-Token"] = authToken
-        headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
 
         val dataJson = JSONObject()
         dataJson.put("action", action)

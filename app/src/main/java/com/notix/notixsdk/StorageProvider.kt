@@ -17,6 +17,7 @@ class StorageProvider {
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
         const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
         const val NOTIX_INTERSTITIAL_PAYLOAD = "NOTIX_INTERSTITIAL_PAYLOAD"
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR = "NOTIX_SUBSCRIBE_REQUEST_VAR"
     }
 
     @Synchronized
@@ -52,6 +53,14 @@ class StorageProvider {
 
     fun setSenderId(context: Context, senderId: Long) {
         putLong(context, NOTIX_REMOTE_SENDER_ID, senderId)
+    }
+
+    fun getPushRequestVar(context: Context): String? {
+        return getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR)
+    }
+
+    fun setPushRequestVar(context: Context, requestVar: String) {
+        putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR, requestVar)
     }
 
     fun getAppId(context: Context): String? {
@@ -154,8 +163,25 @@ class StorageProvider {
     }
 
     fun clearInterstitial(context: Context) {
+        clearByKey(context, NOTIX_INTERSTITIAL_PAYLOAD)
+    }
+
+    fun clearStorage(context: Context) {
+        clearByKey(context, NOTIX_PREF_UNIQUE_ID)
+        clearByKey(context, NOTIX_CREATED_DATE)
+        clearByKey(context, NOTIX_REMOTE_SENDER_ID)
+        clearByKey(context, NOTIX_APP_ID)
+        clearByKey(context, NOTIX_AUTH_TOKEN)
+        clearByKey(context, NOTIX_PUB_ID)
+        clearByKey(context, NOTIX_DEVICE_TOKEN)
+        clearByKey(context, NOTIX_PACKAGE_NAME)
+        clearByKey(context, NOTIX_INTERSTITIAL_PAYLOAD)
+        clearByKey(context, NOTIX_SUBSCRIBE_REQUEST_VAR)
+    }
+
+    private fun clearByKey(context: Context, key: String) {
         val sharedPrefs = context.getSharedPreferences(
-            NOTIX_INTERSTITIAL_PAYLOAD, Service.MODE_PRIVATE
+            key, Service.MODE_PRIVATE
         )
         sharedPrefs.edit().clear().apply();
     }
