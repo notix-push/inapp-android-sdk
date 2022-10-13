@@ -51,7 +51,7 @@ implementation ('com.google.firebase:firebase-messaging:23.0.4') {
     exclude group: "org.apache.httpcomponents", module: "httpclient"
     exclude group: "org.apache.httpcomponents", module: "httpcore"
 }
-implementation 'com.github.notix-push:inapp-android-sdk:0.0.21'
+implementation 'com.github.notix-push:inapp-android-sdk:0.0.27'
 ```
 
 ### Create SDK files

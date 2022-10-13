@@ -8,7 +8,9 @@ import java.util.*
 
 class StorageProvider {
     companion object {
-        const val NOTIX_PREF_UNIQUE_ID = "NOTIX_PREF_UNIQUE_ID"
+        const val NOTIX_PREF_STORAGE = "NOTIX_PREF_STORAGE"
+
+        const val NOTIX_UNIQUE_ID = "NOTIX_PREF_UNIQUE_ID"
         const val NOTIX_CREATED_DATE = "NOTIX_CREATED_DATE"
         const val NOTIX_REMOTE_SENDER_ID = "NOTIX_REMOTE_SENDER_ID"
         const val NOTIX_APP_ID = "NOTIX_APP_ID"
@@ -18,15 +20,16 @@ class StorageProvider {
         const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
         const val NOTIX_INTERSTITIAL_PAYLOAD = "NOTIX_INTERSTITIAL_PAYLOAD"
         const val NOTIX_SUBSCRIBE_REQUEST_VAR = "NOTIX_SUBSCRIBE_REQUEST_VAR"
+        const val NOTIX_MESSAGE_CONTENT_DATA = "NOTIX_MESSAGE_CONTENT_DATA"
     }
 
     @Synchronized
     fun getUUID(context: Context): String {
-        var uniqueID = getString(context, NOTIX_PREF_UNIQUE_ID)
+        var uniqueID = getString(context, NOTIX_UNIQUE_ID)
 
         if (uniqueID == null) {
             uniqueID = UUID.randomUUID().toString().replace("-", "")
-            putString(context, NOTIX_PREF_UNIQUE_ID, uniqueID)
+            putString(context, NOTIX_UNIQUE_ID, uniqueID)
         }
 
         //TODO try make CreatedDate
@@ -111,9 +114,17 @@ class StorageProvider {
         putString(context, NOTIX_INTERSTITIAL_PAYLOAD, interstitialPayload)
     }
 
+    fun getMessageContentPayload(context: Context): String? {
+        return getString(context, NOTIX_MESSAGE_CONTENT_DATA)
+    }
+
+    fun setMessageContentPayload(context: Context, messageContentPayload: String) {
+        putString(context, NOTIX_MESSAGE_CONTENT_DATA, messageContentPayload)
+    }
+
     private fun putString(context: Context, key: String, value: String) {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
 
         val editor: SharedPreferences.Editor = sharedPrefs.edit()
@@ -123,14 +134,14 @@ class StorageProvider {
 
     private fun getString(context: Context, key: String): String? {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
         return sharedPrefs.getString(key, null)
     }
 
     private fun putInt(context: Context, key: String, value: Int) {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
 
         val editor: SharedPreferences.Editor = sharedPrefs.edit()
@@ -140,14 +151,14 @@ class StorageProvider {
 
     private fun getInt(context: Context, key: String): Int {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
         return sharedPrefs.getInt(key, 0)
     }
 
     private fun putLong(context: Context, key: String, value: Long) {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
 
         val editor: SharedPreferences.Editor = sharedPrefs.edit()
@@ -157,31 +168,21 @@ class StorageProvider {
 
     private fun getLong(context: Context, key: String): Long {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
         return sharedPrefs.getLong(key, 0)
     }
 
     fun clearInterstitial(context: Context) {
-        clearByKey(context, NOTIX_INTERSTITIAL_PAYLOAD)
+        val sharedPrefs = context.getSharedPreferences(
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
+        )
+        sharedPrefs.edit().remove(NOTIX_INTERSTITIAL_PAYLOAD).apply()
     }
 
     fun clearStorage(context: Context) {
-        clearByKey(context, NOTIX_PREF_UNIQUE_ID)
-        clearByKey(context, NOTIX_CREATED_DATE)
-        clearByKey(context, NOTIX_REMOTE_SENDER_ID)
-        clearByKey(context, NOTIX_APP_ID)
-        clearByKey(context, NOTIX_AUTH_TOKEN)
-        clearByKey(context, NOTIX_PUB_ID)
-        clearByKey(context, NOTIX_DEVICE_TOKEN)
-        clearByKey(context, NOTIX_PACKAGE_NAME)
-        clearByKey(context, NOTIX_INTERSTITIAL_PAYLOAD)
-        clearByKey(context, NOTIX_SUBSCRIBE_REQUEST_VAR)
-    }
-
-    private fun clearByKey(context: Context, key: String) {
         val sharedPrefs = context.getSharedPreferences(
-            key, Service.MODE_PRIVATE
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
         sharedPrefs.edit().clear().apply();
     }
