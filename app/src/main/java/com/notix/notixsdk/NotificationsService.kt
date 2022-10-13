@@ -22,16 +22,12 @@ import java.net.URL
 @Suppress("unused")
 class NotificationsService {
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent) {
-        if (isAppOnForeground(context) && !hasTargetUrl(intent)) {
-            showToast(context, intent)
-        }
-
         val activity = resolver.resolveActivity(intent)
         showNotification(context, activity, intent, NotificationParameters())
     }
 
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent, notificationParameters: NotificationParameters) {
-        if (isAppOnForeground(context) && !hasTargetUrl(intent)) {
+        if (isAppOnForeground(context) && !hasTargetUrl(intent) && notificationParameters.showToast) {
             showToast(context, intent)
         }
 
@@ -59,6 +55,10 @@ class NotificationsService {
 
     private fun showToast(context: Context, intent: Intent){
         val text = intent.getStringExtra("text")
+
+        if (text == null || text == "") {
+            return
+        }
 
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(context, text, Toast.LENGTH_LONG).show()
@@ -94,9 +94,10 @@ class NotificationsService {
 
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
 
-        val pendingIntent:PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_MUTABLE)
+        val pendingIntent:PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_IMMUTABLE)
         } else {
+            // TODO NEED CHECK WORK FLAG_ONE_SHOT
             PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_ONE_SHOT)
         }
 

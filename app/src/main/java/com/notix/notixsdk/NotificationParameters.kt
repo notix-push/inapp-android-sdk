@@ -16,4 +16,5 @@ class NotificationParameters {
     var vibrationPattern: LongArray = longArrayOf(500)
     var sound: Uri? = null
     var priority: Int = NotificationCompat.PRIORITY_DEFAULT
+    var showToast: Boolean = false
 }

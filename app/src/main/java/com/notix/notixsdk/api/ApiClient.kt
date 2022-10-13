@@ -6,6 +6,7 @@ import com.android.volley.AuthFailureError
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.notix.notixsdk.R
 import com.notix.notixsdk.StorageProvider
 import org.json.JSONException
 import org.json.JSONObject
@@ -62,27 +63,28 @@ class ApiClient {
         }
     }
 
-    fun getInterstitial(context: Context, requestVar: String?, getInterstitialDoneCallback: () -> Unit) {
+    // TODO now it is copy-paste getInterstitial fun
+    fun getMessageContent(context: Context, requestVar: String?, getMessageContentDoneCallback: () -> Unit) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
 
         val headers = getMainHeaders()
 
         val uuid = StorageProvider().getUUID(context)
 
-        if (uuid == "") {
+        if (uuid.isEmpty()) {
             Log.d("NotixDebug", "uuid is empty")
             return
         }
 
         val createdDate = StorageProvider().getCreatedDate(context)
-        if (createdDate == "") {
+        if (createdDate.isEmpty()) {
             Log.d("NotixDebug", "createdDate is empty")
             return
         }
 
         val appId = StorageProvider().getAppId(context)
 
-        if (appId == "") {
+        if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
             return
         }
@@ -95,14 +97,73 @@ class ApiClient {
         }
 
         try {
-            val dataJson = JSONObject()
-            dataJson.put("user", uuid)
-            dataJson.put("app", appId)
-            dataJson.put("pt", 3)
-            dataJson.put("pid", pubId)
-            dataJson.put("cd", createdDate)
-            if (requestVar != null && requestVar != "") {
-                dataJson.put("rv", requestVar)
+            val dataJson = JSONObject().apply {
+                put("user", uuid)
+                put("app", appId)
+                put("pt", 3)
+                put("pid", pubId)
+                put("cd", createdDate)
+                if (!requestVar.isNullOrEmpty()) {
+                    put("rv", requestVar)
+                }
+            }
+
+            postRequest(context, url, headers, dataJson.toString()) {
+                storage.setMessageContentPayload(context, it)
+
+                getMessageContentDoneCallback()
+                Log.d("NotixDebug", "message content loaded")
+            }
+        } catch (e: JSONException) {
+            Log.d(
+                "NotixDebug",
+                "invalid message content request appId: $appId, uuid: $uuid. ${e.message}"
+            )
+        }
+    }
+
+    fun getInterstitial(context: Context, requestVar: String?, getInterstitialDoneCallback: () -> Unit) {
+        val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
+
+        val headers = getMainHeaders()
+
+        val uuid = StorageProvider().getUUID(context)
+
+        if (uuid.isEmpty()) {
+            Log.d("NotixDebug", "uuid is empty")
+            return
+        }
+
+        val createdDate = StorageProvider().getCreatedDate(context)
+        if (createdDate.isEmpty()) {
+            Log.d("NotixDebug", "createdDate is empty")
+            return
+        }
+
+        val appId = StorageProvider().getAppId(context)
+
+        if (appId.isNullOrEmpty()) {
+            Log.d("NotixDebug", "app id is empty")
+            return
+        }
+
+        val pubId = StorageProvider().getPubId(context)
+
+        if (pubId == 0) {
+            Log.d("NotixDebug", "pub id is empty")
+            return
+        }
+
+        try {
+            val dataJson = JSONObject().apply {
+                put("user", uuid)
+                put("app", appId)
+                put("pt", 3)
+                put("pid", pubId)
+                put("cd", createdDate)
+                if (!requestVar.isNullOrEmpty()) {
+                    put("rv", requestVar)
+                }
             }
 
             postRequest(context, url, headers, dataJson.toString()) {
@@ -117,7 +178,6 @@ class ApiClient {
                 "invalid interstitial request appId: $appId, uuid: $uuid. ${e.message}"
             )
         }
-
     }
 
     fun subscribe(
@@ -132,21 +192,28 @@ class ApiClient {
         val headers = getMainHeaders()
 
         val createdDate = StorageProvider().getCreatedDate(context)
-        if (createdDate == "") {
+        if (createdDate.isEmpty()) {
             Log.d("NotixDebug", "createdDate is empty")
+        }
+
+        val sdkVersion = context.resources.getString(R.string.sdk_version)
+        if (sdkVersion.isEmpty()) {
+            Log.d("NotixDebug", "sdkVersion is empty")
         }
 
         val requestVar = StorageProvider().getPushRequestVar(context)
 
-        val dataJson = JSONObject()
-        dataJson.put("uuid", uuid)
-        dataJson.put("package_name", packageName)
-        dataJson.put("appId", appId)
-        dataJson.put("token", token)
-        dataJson.put("created_date", createdDate)
+        val dataJson = JSONObject().apply {
+            put("uuid", uuid)
+            put("package_name", packageName)
+            put("appId", appId)
+            put("token", token)
+            put("created_date", createdDate)
+            put("sdk_version", sdkVersion)
 
-        if (requestVar != null && requestVar != "") {
-            dataJson.put("var", requestVar)
+            if (!requestVar.isNullOrEmpty()) {
+                put("var", requestVar)
+            }
         }
 
         postRequest(context, url, headers, dataJson.toString()) {
@@ -166,7 +233,7 @@ class ApiClient {
 
         val appId = StorageProvider().getAppId(context)
 
-        if (appId == null) {
+        if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
             return
         }
@@ -194,14 +261,15 @@ class ApiClient {
 
         val appId = StorageProvider().getAppId(context)
 
-        if (appId == null) {
+        if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
             return
         }
 
         try {
-            val dataJson = JSONObject(clickData)
-            dataJson.put("app_id", appId)
+            val dataJson = JSONObject(clickData).apply {
+                put("app_id", appId)
+            }
 
             postRequest(context, url, headers, dataJson.toString()) {
                 Log.d("NotixDebug", "click tracked")
@@ -232,14 +300,14 @@ class ApiClient {
 
         val uuid = StorageProvider().getUUID(context)
 
-        if (uuid == "") {
+        if (uuid.isEmpty()) {
             Log.d("NotixDebug", "uuid is empty")
             return
         }
 
         val packageName = StorageProvider().getPackageName(context)
 
-        if (packageName == "") {
+        if (packageName.isNullOrEmpty()) {
             Log.d("NotixDebug", "packageName is empty")
             return
         }
@@ -247,12 +315,13 @@ class ApiClient {
         val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
         val version = pInfo.versionName
 
-        val dataJson = JSONObject()
-        dataJson.put("app_id", appId)
-        dataJson.put("pub_id", pubId)
-        dataJson.put("uuid", uuid)
-        dataJson.put("version", version)
-        dataJson.put("package_name", packageName)
+        val dataJson = JSONObject().apply {
+            put("app_id", appId)
+            put("pub_id", pubId)
+            put("uuid", uuid)
+            put("version", version)
+            put("package_name", packageName)
+        }
 
         Log.d("NotixDebug", "refresh: $dataJson")
 
@@ -270,30 +339,30 @@ class ApiClient {
     }
 
     private fun manageAudience(context: Context, action: String, audience: String) {
-        if (action == "") {
+        if (action.isEmpty()) {
             Log.d("NotixDebug", "action is empty")
             return
         }
 
-        if (audience == "") {
+        if (audience.isEmpty()) {
             Log.d("NotixDebug", "audience is empty")
             return
         }
 
         val authToken = StorageProvider().getAuthToken(context)
-        if (authToken == null || authToken == "") {
+        if (authToken.isNullOrEmpty()) {
             Log.d("NotixDebug", "authToken is empty")
             return
         }
 
         val appId = StorageProvider().getAppId(context)
-        if (appId == null) {
+        if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
             return
         }
 
         val uuid = StorageProvider().getUUID(context)
-        if (uuid == "") {
+        if (uuid.isEmpty()) {
             Log.d("NotixDebug", "uuid is empty")
             return
         }
@@ -306,7 +375,7 @@ class ApiClient {
 
         val packageName = StorageProvider().getPackageName(context)
 
-        if (packageName == "") {
+        if (packageName.isNullOrEmpty()) {
             Log.d("NotixDebug", "packageName is empty")
             return
         }
@@ -316,14 +385,14 @@ class ApiClient {
         val headers = getMainHeaders()
         headers["Authorization-Token"] = authToken
 
-        val dataJson = JSONObject()
-        dataJson.put("action", action)
-        dataJson.put("uuid", uuid)
-        dataJson.put("app_id", appId)
-        dataJson.put("pub_id", pubId)
-        dataJson.put("audience", audience)
-        dataJson.put("package_name", packageName)
-
+        val dataJson = JSONObject().apply {
+            put("action", action)
+            put("uuid", uuid)
+            put("app_id", appId)
+            put("pub_id", pubId)
+            put("audience", audience)
+            put("package_name", packageName)
+        }
 
         postRequest(context, url, headers, dataJson.toString()) {
             Log.d("NotixDebug", "audience managed")

@@ -4,7 +4,6 @@ import android.content.Context
 import com.notix.notixsdk.api.ApiClient
 
 class NotixSDK {
-
     private var notixFirebaseInitProvider: NotixFirebaseInitProvider? = null
     private val storage = StorageProvider()
     private val apiClient = ApiClient()
@@ -38,7 +37,6 @@ class NotixSDK {
             storage.setAuthToken(context, notixToken)
             storage.setPushRequestVar(context, requestVar)
             storage.getUUID(context)
-
 
             notixFirebaseInitProvider = NotixFirebaseInitProvider()
             notixFirebaseInitProvider!!.init(context, receiveTokenEnrichCallback)
