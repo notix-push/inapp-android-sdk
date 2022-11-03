@@ -29,7 +29,7 @@ class NotixContentWrapper {
     @Volatile
     private var isInit = false
 
-    fun load(context: Context, requestVar: String? = null, onLoadCallback: () -> Unit) {
+    fun load(context: Context, zoneId: Long? = null, vars: DomainModels.RequestVars? = null, onLoadCallback: () -> Unit) {
         val onLoadCallbackForContent = {
             val messageContent = getInterstitialPayload(context)
             if (messageContent != null) {
@@ -40,7 +40,7 @@ class NotixContentWrapper {
         }
 
         isInit = false
-        apiClient.getMessageContent(context, requestVar, onLoadCallbackForContent)
+        apiClient.getMessageContent(context, vars, zoneId, onLoadCallbackForContent)
     }
 
     fun getMessageContent(): ContentData? = content

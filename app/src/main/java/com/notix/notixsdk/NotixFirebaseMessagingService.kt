@@ -3,15 +3,13 @@ package com.notix.notixsdk
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.notix.notixsdk.api.ApiClient
+import org.json.JSONObject
 
 open class NotixFirebaseMessagingService: FirebaseMessagingService() {
     lateinit var intent: Intent
-    private var apiClient: ApiClient = ApiClient()
-
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
@@ -23,6 +21,7 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         val targetUrlData: String = getValueFromData(message.data, "target_url_data", "")
         val iconUrl: String = getValueFromData(message.data, "icon_url", "")
         val imageUrl: String = getValueFromData(message.data, "image_url", "")
+        val pingData: String = getValueFromData(message.data, "pd", "")
 
         Log.d("NotixDebug", "Message received event=$event title=$title text=$text")
 
@@ -31,17 +30,23 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
+        intent.putExtra("event", event)
         intent.putExtra("title", title)
         intent.putExtra("text", text)
-        intent.putExtra("event", event)
         intent.putExtra("click_data", clickData)
         intent.putExtra("impression_data", impressionData)
         intent.putExtra("target_url_data", targetUrlData)
         intent.putExtra("icon_url", iconUrl)
         intent.putExtra("image_url", imageUrl)
+        intent.putExtra("pd", pingData)
 
-        ApiClient().impression(this, impressionData)
+
+        if (pingData.isEmpty() || JSONObject(pingData).length() == 0) {
+            ApiClient().impression(this, impressionData)
+        }
     }
+
+    private var apiClient: ApiClient = ApiClient()
 
     private fun getValueFromData(data: Map<String, String>, key: String, default: String): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

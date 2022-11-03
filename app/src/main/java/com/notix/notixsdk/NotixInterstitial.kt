@@ -47,7 +47,7 @@ class NotixInterstitial private constructor() {
         ).also(activity.lifecycle::addObserver)
     }
 
-    fun load(context: Context, requestVar: String? = null, onLoadCallback: () -> Unit) {
+    fun load(context: Context, zoneId: Long? = null, vars: DomainModels.RequestVars? = null, onLoadCallback: () -> Unit) {
         isLoaded = false
 
         val onLoadCallbackForShow = {
@@ -58,7 +58,7 @@ class NotixInterstitial private constructor() {
             onLoadCallback()
         }
 
-        apiClient.getInterstitial(context, requestVar, onLoadCallbackForShow)
+        apiClient.getInterstitial(context, vars, zoneId, onLoadCallbackForShow)
     }
 
     fun show(context: Context) {
