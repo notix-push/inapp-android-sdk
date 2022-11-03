@@ -1,7 +1,10 @@
 package com.notix.notixsdk
 
-import android.app.*
+import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -15,15 +18,20 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import java.io.IOException
+import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.utils.getOrFallback
+import org.json.JSONArray
+import org.json.JSONObject
 import java.net.URL
 
 
 @Suppress("unused")
 class NotificationsService {
+    private var apiClient: ApiClient = ApiClient()
+
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent) {
         val activity = resolver.resolveActivity(intent)
-        showNotification(context, activity, intent, NotificationParameters())
+        processNotification(context, activity, intent, NotificationParameters())
     }
 
     fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent, notificationParameters: NotificationParameters) {
@@ -32,7 +40,8 @@ class NotificationsService {
         }
 
         val activity = resolver.resolveActivity(intent)
-        showNotification(context, activity, intent, notificationParameters)
+
+        processNotification(context, activity, intent, notificationParameters)
     }
 
     private fun hasTargetUrl(intent: Intent): Boolean {
@@ -65,19 +74,69 @@ class NotificationsService {
         }
     }
 
+    private fun processNotification(context: Context, activity: Class<*>, intent: Intent, notificationParameters: NotificationParameters) {
+        val pingData = intent.getStringExtra("pd")
+
+        val showNotificationThread = Thread {
+            try {
+                showNotification(context, activity, intent, notificationParameters)
+            } catch (e: Exception) {
+                Log.d("NotixDebug", "Show notification thread crash: ${e.message?:"[exception message null]"}")
+                e.printStackTrace()
+            }
+        }
+
+        if (pingData.isNullOrEmpty() || JSONObject(pingData).length() == 0) {
+            showNotificationThread.start()
+            return
+        }
+
+        fun callback(response: String) {
+            fillMessage(intent, response)
+            showNotificationThread.start()
+            apiClient.impression(context, intent.getStringExtra("impression_data"))
+        }
+
+        apiClient.getPushData(context, pingData, ::callback)
+    }
+
+    private fun fillMessage(intent: Intent, response: String) {
+        Log.d("NotixDebug", "Message filled: $response")
+        val dataJsonArray = JSONArray(response)
+
+        for (i in 0 until dataJsonArray.length()) {
+            val item: JSONObject = dataJsonArray.getJSONObject(i)
+            intent.putExtra("title", item.getOrFallback("title", ""))
+            intent.putExtra("text", item.getOrFallback("description", ""))
+            intent.putExtra("click_data", if (item.has("click_data")) item.getString("click_data") else "")
+            intent.putExtra("impression_data", if (item.has("impression_data")) item.getString("impression_data") else "")
+            intent.putExtra("target_url_data", item.getOrFallback("target_url", ""))
+            intent.putExtra("icon_url", item.getOrFallback("icon_url", ""))
+            intent.putExtra("image_url", item.getOrFallback("image_url", ""))
+        }
+    }
+
     private fun showNotification(context: Context, activity: Class<*>, intent: Intent, notificationParameters: NotificationParameters) {
-        val title = intent.getStringExtra("title")
-        val text = intent.getStringExtra("text")
+        var title = intent.getStringExtra("title")
+        var text = intent.getStringExtra("text")
         val clickData = intent.getStringExtra("click_data")
         val targetUrlData = intent.getStringExtra("target_url_data")
         val iconUrl = intent.getStringExtra("icon_url")
         val imageUrl = intent.getStringExtra("image_url")
 
+        if (!notificationParameters.title.isNullOrEmpty()) {
+            title = notificationParameters.title
+        }
+
+        if (!notificationParameters.text.isNullOrEmpty()) {
+            text = notificationParameters.text
+        }
+
         val rootIntent : Intent
 
         val notificationIntent : Intent
 
-        if (targetUrlData != null && targetUrlData != "") {
+        if (!targetUrlData.isNullOrEmpty()) {
             rootIntent = Intent(Intent.ACTION_VIEW)
             rootIntent.data = Uri.parse(targetUrlData)
         } else {
@@ -113,8 +172,8 @@ class NotificationsService {
             .setStyle(NotificationCompat.BigPictureStyle()
                 .bigPicture(image)
                 .bigLargeIcon(null))
-            .setContentTitle(notificationParameters.title ?: title)
-            .setContentText(notificationParameters.text ?: text)
+            .setContentTitle(title)
+            .setContentText(text)
             .setAutoCancel(true)
             .setVibrate(notificationParameters.vibrationPattern)
             .setSound(notificationParameters.sound ?: defaultSoundUri, AudioManager.STREAM_NOTIFICATION)
@@ -143,7 +202,7 @@ class NotificationsService {
             try {
                 val url = URL(imgUrl)
                 return BitmapFactory.decodeStream(url.openConnection().getInputStream())
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 Log.d(
                     "NotixDebug",
                     "Failed receive image by url: $imgUrl , have ex: ${e.message} "

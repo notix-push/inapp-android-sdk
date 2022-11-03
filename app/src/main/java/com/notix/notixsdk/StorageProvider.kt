@@ -19,8 +19,13 @@ class StorageProvider {
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
         const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
         const val NOTIX_INTERSTITIAL_PAYLOAD = "NOTIX_INTERSTITIAL_PAYLOAD"
-        const val NOTIX_SUBSCRIBE_REQUEST_VAR = "NOTIX_SUBSCRIBE_REQUEST_VAR"
         const val NOTIX_MESSAGE_CONTENT_DATA = "NOTIX_MESSAGE_CONTENT_DATA"
+
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR_1 = "NOTIX_SUBSCRIBE_REQUEST_VAR_1"
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR_2 = "NOTIX_SUBSCRIBE_REQUEST_VAR_2"
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR_3 = "NOTIX_SUBSCRIBE_REQUEST_VAR_3"
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR_4 = "NOTIX_SUBSCRIBE_REQUEST_VAR_4"
+        const val NOTIX_SUBSCRIBE_REQUEST_VAR_5 = "NOTIX_SUBSCRIBE_REQUEST_VAR_5"
     }
 
     @Synchronized
@@ -58,12 +63,35 @@ class StorageProvider {
         putLong(context, NOTIX_REMOTE_SENDER_ID, senderId)
     }
 
-    fun getPushRequestVar(context: Context): String? {
-        return getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR)
+    fun getPushVars(context: Context): DomainModels.RequestVars {
+        val var1 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_1) ?: ""
+        val var2 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_2) ?: ""
+        val var3 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_3) ?: ""
+        val var4 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_4) ?: ""
+        val var5 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_5) ?: ""
+
+        return DomainModels.RequestVars(var1, var2, var3, var4, var5)
     }
 
-    fun setPushRequestVar(context: Context, requestVar: String) {
-        putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR, requestVar)
+    fun setPushVars(context: Context, vars: DomainModels.RequestVars? = null) {
+        if (vars == null) {
+            return
+        }
+        if (vars.var1.isNotEmpty()) {
+            putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_1, vars.var1)
+        }
+        if (vars.var2.isNotEmpty()) {
+            putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_2, vars.var2)
+        }
+        if (vars.var3.isNotEmpty()) {
+            putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_3, vars.var3)
+        }
+        if (vars.var4.isNotEmpty()) {
+            putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_4, vars.var4)
+        }
+        if (vars.var5.isNotEmpty()) {
+            putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_5, vars.var5)
+        }
     }
 
     fun getAppId(context: Context): String? {

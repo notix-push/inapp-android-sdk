@@ -6,6 +6,7 @@ import com.android.volley.AuthFailureError
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.notix.notixsdk.DomainModels
 import com.notix.notixsdk.R
 import com.notix.notixsdk.StorageProvider
 import org.json.JSONException
@@ -18,6 +19,7 @@ class ApiClient {
     companion object {
         const val NOTIX_API_BASE_ROUTE = "https://notix.io/api/inapp"
         const val NOTIX_EVENTS_BASE_ROUTE = "https://notix.io/inapp"
+        const val NOTIX_BASE_ROUTE = "https://notix.io"
     }
 
     private fun getMainHeaders(): MutableMap<String, String> {
@@ -64,8 +66,8 @@ class ApiClient {
     }
 
     // TODO now it is copy-paste getInterstitial fun
-    fun getMessageContent(context: Context, requestVar: String?, getMessageContentDoneCallback: () -> Unit) {
-        val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
+    fun getMessageContent(context: Context, vars: DomainModels.RequestVars? = null, zoneId: Long?, getMessageContentDoneCallback: () -> Unit) {
+        val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
         val headers = getMainHeaders()
 
@@ -103,8 +105,9 @@ class ApiClient {
                 put("pt", 3)
                 put("pid", pubId)
                 put("cd", createdDate)
-                if (!requestVar.isNullOrEmpty()) {
-                    put("rv", requestVar)
+                vars?.fillJsonObject(this)
+                if (zoneId != null && zoneId > 0) {
+                    put("az", zoneId)
                 }
             }
 
@@ -122,8 +125,25 @@ class ApiClient {
         }
     }
 
-    fun getInterstitial(context: Context, requestVar: String?, getInterstitialDoneCallback: () -> Unit) {
+    fun getPushData(context: Context, pd: String, getPushDataCallback: (response: String) -> Unit) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
+
+        val headers = getMainHeaders()
+
+        try {
+            postRequest(context, url, headers, pd) {
+                getPushDataCallback(it)
+            }
+        } catch (e: JSONException) {
+            Log.d(
+                "NotixDebug",
+                "invalid pd request pd: $pd. ${e.message}"
+            )
+        }
+    }
+
+    fun getInterstitial(context: Context, vars: DomainModels.RequestVars? = null, zoneId: Long?, getInterstitialDoneCallback: () -> Unit) {
+        val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
         val headers = getMainHeaders()
 
@@ -161,8 +181,9 @@ class ApiClient {
                 put("pt", 3)
                 put("pid", pubId)
                 put("cd", createdDate)
-                if (!requestVar.isNullOrEmpty()) {
-                    put("rv", requestVar)
+                vars?.fillJsonObject(this)
+                if (zoneId != null && zoneId > 0) {
+                    put("az", zoneId)
                 }
             }
 
@@ -185,7 +206,7 @@ class ApiClient {
         appId: String,
         uuid: String,
         packageName: String,
-        token: String
+        token: String,
     ) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/android/subscribe"
 
@@ -201,7 +222,7 @@ class ApiClient {
             Log.d("NotixDebug", "sdkVersion is empty")
         }
 
-        val requestVar = StorageProvider().getPushRequestVar(context)
+        val vars = StorageProvider().getPushVars(context)
 
         val dataJson = JSONObject().apply {
             put("uuid", uuid)
@@ -211,8 +232,8 @@ class ApiClient {
             put("created_date", createdDate)
             put("sdk_version", sdkVersion)
 
-            if (!requestVar.isNullOrEmpty()) {
-                put("var", requestVar)
+            if (!vars.isEmpty()) {
+                vars.fillJsonObject(this)
             }
         }
 

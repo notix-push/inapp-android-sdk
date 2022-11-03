@@ -17,14 +17,14 @@ class NotixSDK {
         notixToken: String,
         receiveTokenCallback: ((String) -> Unit)? = null,
     ) {
-        init(context, notixAppId, notixToken, "", receiveTokenCallback)
+        init(context, notixAppId, notixToken, null, receiveTokenCallback)
     }
 
     fun init(
         context: Context,
         notixAppId: String,
         notixToken: String,
-        requestVar: String,
+        vars: DomainModels.RequestVars? = null,
         receiveTokenCallback: ((String) -> Unit)? = null,
     ) {
         val receiveTokenEnrichCallback: (String) -> Unit = { data ->
@@ -35,7 +35,7 @@ class NotixSDK {
         val initFirebaseProvider = {
             storage.setPackageName(context, context.packageName)
             storage.setAuthToken(context, notixToken)
-            storage.setPushRequestVar(context, requestVar)
+            storage.setPushVars(context, vars)
             storage.getUUID(context)
 
             notixFirebaseInitProvider = NotixFirebaseInitProvider()
