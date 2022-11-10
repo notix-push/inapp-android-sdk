@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.30'
+    sdkVersion = '0.0.31'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -30,7 +30,7 @@ android {
             resValue "string", "sdk_version", "$sdkVersion"
         }
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             multiDexEnabled true
             resValue "string", "sdk_version", "$sdkVersion"
