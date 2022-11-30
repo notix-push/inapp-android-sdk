@@ -75,7 +75,6 @@ class ApiClient {
 
         if (uuid.isEmpty()) {
             Log.d("NotixDebug", "uuid is empty")
-            return
         }
 
         val createdDate = StorageProvider().getCreatedDate(context)
@@ -88,14 +87,12 @@ class ApiClient {
 
         if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
-            return
         }
 
         val pubId = StorageProvider().getPubId(context)
 
         if (pubId == 0) {
             Log.d("NotixDebug", "pub id is empty")
-            return
         }
 
         try {
@@ -151,7 +148,6 @@ class ApiClient {
 
         if (uuid.isEmpty()) {
             Log.d("NotixDebug", "uuid is empty")
-            return
         }
 
         val createdDate = StorageProvider().getCreatedDate(context)
@@ -164,14 +160,12 @@ class ApiClient {
 
         if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
-            return
         }
 
         val pubId = StorageProvider().getPubId(context)
 
         if (pubId == 0) {
             Log.d("NotixDebug", "pub id is empty")
-            return
         }
 
         try {
