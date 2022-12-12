@@ -1,37 +1,37 @@
 package com.notix.notixsdk.interstitial
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.View
+import android.view.WindowInsets
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.annotation.ColorInt
-import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
-import coil.imageLoader
-import coil.load
-import coil.request.ImageRequest
-import com.commit451.coiltransformations.BlurTransformation
 import com.notix.notixsdk.R
 import com.notix.notixsdk.api.ApiClient
 import com.notix.notixsdk.utils.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import java.lang.ref.WeakReference
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import java.net.URL
 
-internal class InterstitialActivity : AppCompatActivity() {
+internal class InterstitialActivity : Activity() {
 
     companion object {
         const val DATA = "INTERSTITIAL_DATA"
@@ -55,32 +55,44 @@ internal class InterstitialActivity : AppCompatActivity() {
 
         val data = intent.getSerializableExtra(DATA) as? InterstitialData
         if (data == null) {
+            Log.i("NotixDebug", "data null: $data")
             closeInterstitial(InterstitialContract.RESULT_ERROR)
             return
         }
-        lifecycleScope.safeLaunch {
-            composeInterstitial(data)
-        }
+        composeInterstitial(data)
     }
 
     private fun prepareActivity() {
         this.window?.let { window ->
-            WindowCompat.setDecorFitsSystemWindows(window, false)
+            if (Build.VERSION.SDK_INT >= 30) {
+                window.setDecorFitsSystemWindows(false)
+            } else {
+                val decorFitsFlags = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+
+                val decorView = window.decorView
+                val sysUiVis = decorView.systemUiVisibility
+                decorView.systemUiVisibility = sysUiVis or decorFitsFlags
+            }
             observeInsets(window.decorView)
         }
     }
 
     private fun observeInsets(view: View) {
-        ViewCompat.setOnApplyWindowInsetsListener(view) { _, windowInsets ->
-            val topInset = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            val rightInset = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).right
-            applyInsets(topInset, rightInset)
-            WindowInsetsCompat.CONSUMED
+        if (Build.VERSION.SDK_INT >= 30) {
+            view.setOnApplyWindowInsetsListener { v, insets ->
+                val topInset = insets.getInsets(WindowInsets.Type.statusBars()).top
+                val rightInset = insets.getInsets(WindowInsets.Type.navigationBars()).right
+                applyInsets(topInset, rightInset)
+                WindowInsets.CONSUMED
+            }
+
         }
     }
 
     private fun applyInsets(topInset: Int, rightInset: Int) {
-        val layoutParams = (closeButton.layoutParams as? ConstraintLayout.LayoutParams)
+        val layoutParams = (closeButton.layoutParams as? FrameLayout.LayoutParams)
             ?.apply {
                 topMargin = topInset
                 rightMargin = (8f.dp + rightInset).toInt()
@@ -88,51 +100,102 @@ internal class InterstitialActivity : AppCompatActivity() {
         closeButton.layoutParams = layoutParams
     }
 
-    private suspend fun composeInterstitial(data: InterstitialData) {
-        val drawable = loadImage(data.imageUrl)
-        progressView.isVisible = false
-        image.setImageDrawable(drawable)
-        setBlurredBackground(drawable)
-        configureControls(data, drawable)
-        apiClient.impression(this, data.impressionData)
+    private fun composeInterstitial(data: InterstitialData) {
+        loadImage(data.imageUrl) {
+            runOnUiThread {
+                it?.let { drawable ->
+                    progressView.visibility = View.INVISIBLE
+                    image.setImageDrawable(drawable)
+                    setBlurredBackground(drawable)
+                }
+                configureControls(data, it)
+            }
+            apiClient.impression(this, data.impressionData)
+        }
     }
 
-    private suspend fun loadImage(url: String): Drawable? = suspendCoroutine { continuation ->
-        ImageRequest.Builder(this)
-            .data(url)
-            .allowHardware(false)
-            .target(
-                onSuccess = { continuation.resume(it) },
-                onError = {
-                    continuation.resume(it)
-                    closeInterstitial(InterstitialContract.RESULT_ERROR)
-                }
-            )
-            .build()
-            .also(imageLoader::enqueue)
+    private fun loadImage(url: String, onResult: (Drawable?) -> Unit) {
+        Thread {
+            try {
+                val uriStream = URL(url).openStream()
+                val bmp = BitmapFactory.decodeStream(uriStream)
+
+                onResult(BitmapDrawable(resources, bmp))
+            } catch (e: Throwable) {
+
+                Log.i("NotixDebug", "loadImage error: $e")
+                onResult(null)
+            }
+        }.start()
     }
 
     private fun setBlurredBackground(image: Drawable?) {
         if (image == null) return
-        background.load(image) {
-            transformations(BlurTransformation(this@InterstitialActivity))
-        }
+
+        background.setImageBitmap(blur(this, image.toBitmap()))
     }
 
-    private suspend fun configureControls(data: InterstitialData, drawable: Drawable?) {
-        val colors = ColorPairsGenerator.generate(this, drawable)
-        // use primary color for button if it exists for text, otherwise
-        val textColors = if (data.buttons.isNotEmpty()) {
-            colors.getOrNull(1) ?: colors.first()
-        } else {
-            colors.first()
+
+    // from coil
+    private fun blur(context: Context, input: Bitmap): Bitmap {
+        val radius = 10f
+        val sampling = 1f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
+        val scaledWidth = (input.width / sampling).toInt()
+        val scaledHeight = (input.height / sampling).toInt()
+        val output =
+            Bitmap.createBitmap(scaledWidth, scaledHeight, input.config ?: Bitmap.Config.ARGB_8888)
+        Canvas(output).apply {
+            scale(1 / sampling, 1 / sampling)
+            drawBitmap(input, 0f, 0f, paint)
         }
-        val buttonColors = colors.first()
-        drawTexts(data, textColors)
-        drawButtons(data, buttonColors)
-        configureCloseButton(data)
-        setCloseListener()
-        setClickListener(data)
+
+        var script: RenderScript? = null
+        var tmpInt: Allocation? = null
+        var tmpOut: Allocation? = null
+        var blur: ScriptIntrinsicBlur? = null
+        try {
+            script = RenderScript.create(context)
+            tmpInt = Allocation.createFromBitmap(
+                script,
+                output,
+                Allocation.MipmapControl.MIPMAP_NONE,
+                Allocation.USAGE_SCRIPT
+            )
+            tmpOut = Allocation.createTyped(script, tmpInt.type)
+            blur = ScriptIntrinsicBlur.create(script, Element.U8_4(script))
+            blur.setRadius(radius)
+            blur.setInput(tmpInt)
+            blur.forEach(tmpOut)
+            tmpOut.copyTo(output)
+        } finally {
+            script?.destroy()
+            tmpInt?.destroy()
+            tmpOut?.destroy()
+            blur?.destroy()
+        }
+
+        return output
+    }
+
+    private fun configureControls(data: InterstitialData, drawable: Drawable?) {
+        ColorPairsGenerator.generate(this, drawable) { colors ->
+            // use primary color for button if it exists for text, otherwise
+            val textColors = if (data.buttons.isNotEmpty()) {
+                colors.getOrNull(1) ?: colors.first()
+            } else {
+                colors.first()
+            }
+            val buttonColors = colors.first()
+            runOnUiThread {
+                drawTexts(data, textColors)
+                drawButtons(data, buttonColors)
+                configureCloseButton(data)
+                setCloseListener()
+                setClickListener(data)
+            }
+        }
     }
 
     private fun drawTexts(data: InterstitialData, colorsPair: Pair<Int, Int>) {
@@ -161,7 +224,7 @@ internal class InterstitialActivity : AppCompatActivity() {
         }
     }
 
-    private fun generateBackgroundDrawable(@ColorInt color: Int, radius: Float) =
+    private fun generateBackgroundDrawable(color: Int, radius: Float) =
         GradientDrawable().apply {
             setColor(color)
             cornerRadius = radius
@@ -169,17 +232,19 @@ internal class InterstitialActivity : AppCompatActivity() {
 
     private fun configureCloseButton(data: InterstitialData) {
         val closingSettings = data.closingSettings
-        val showButtonTime = System.currentTimeMillis() + closingSettings.timeout * 1000
-        lifecycleScope.safeLaunch {
-            val buttonWR = WeakReference(closeButton)
-            while (isActive) {
-                if (System.currentTimeMillis() >= showButtonTime) {
-                    buttonWR.get()?.visibility = View.VISIBLE
-                    break
-                }
-                delay(1000)
+        val showButtonTime = closingSettings.timeout * 1000L
+        val buttonWR = WeakReference(closeButton)
+
+        val timer = object : CountDownTimer(showButtonTime, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+            }
+
+            override fun onFinish() {
+                buttonWR.get()?.visibility = View.VISIBLE
             }
         }
+
+        timer.start()
 
         if (closingSettings.opacity in 0f..1f) {
             closeButton.alpha = closingSettings.opacity
@@ -187,7 +252,7 @@ internal class InterstitialActivity : AppCompatActivity() {
 
         val sizeMultiplier = closingSettings.sizePercent
         if (sizeMultiplier in 0f..2f) {
-            val layoutParams = (closeButton.layoutParams as? ConstraintLayout.LayoutParams)
+            val layoutParams = (closeButton.layoutParams as? FrameLayout.LayoutParams)
                 ?.apply {
                     val size = (closeButton.layoutParams.width * sizeMultiplier).toInt()
                     width = size

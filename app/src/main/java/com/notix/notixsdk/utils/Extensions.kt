@@ -3,15 +3,13 @@ package com.notix.notixsdk.utils
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsService
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import org.json.JSONObject
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
 internal fun Context.getBrowserIntentPackages(): List<ResolveInfo> {
     // Get default VIEW intent handler.
@@ -44,13 +42,32 @@ internal fun Context.hasCustomTabsBrowser(): Boolean {
 internal inline fun <reified T> JSONObject.getOrFallback(name: String, fallback: T): T =
     if (this.has(name)) (this.get(name) as? T) ?: fallback else fallback
 
-fun CoroutineScope.safeLaunch(
-    context: CoroutineContext = EmptyCoroutineContext,
-    errorBlock: (Throwable) -> Unit = {},
-    block: suspend CoroutineScope.() -> Unit,
-): Job {
-    val errorHandler = CoroutineExceptionHandler { _, throwable ->
-        errorBlock(throwable)
+/// from androidx
+fun Drawable.toBitmap(
+    width: Int = intrinsicWidth,
+    height: Int = intrinsicHeight,
+    config: Bitmap.Config? = null
+): Bitmap {
+    if (this is BitmapDrawable) {
+        if (config == null || bitmap.config == config) {
+            // Fast-path to return original. Bitmap.createScaledBitmap will do this check, but it
+            // involves allocation and two jumps into native code so we perform the check ourselves.
+            if (width == bitmap.width && height == bitmap.height) {
+                return bitmap
+            }
+            return Bitmap.createScaledBitmap(bitmap, width, height, true)
+        }
     }
-    return launch(context + errorHandler, block = block)
+
+    val oldLeft = bounds.left
+    val oldTop = bounds.top
+    val oldRight = bounds.right
+    val oldBottom = bounds.bottom
+
+    val bitmap = Bitmap.createBitmap(width, height, config ?: Bitmap.Config.ARGB_8888)
+    setBounds(0, 0, width, height)
+    draw(Canvas(bitmap))
+
+    setBounds(oldLeft, oldTop, oldRight, oldBottom)
+    return bitmap
 }

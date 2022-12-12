@@ -2,19 +2,16 @@ package com.notix.notixsdk.utils
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
+import android.os.Build
 import androidx.palette.graphics.Palette
 import com.notix.notixsdk.R
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 object ColorPairsGenerator {
 
-    suspend fun generate(context: Context, drawable: Drawable?): List<Pair<Int, Int>> {
-        if (drawable == null) return emptyList()
-        return suspendCoroutine { continuation ->
-            val bitmap = drawable.toBitmap()
+    fun generate(context: Context, drawable: Drawable?, onResult: (List<Pair<Int, Int>>) -> Unit) {
+        if (drawable == null) onResult(emptyList())
+        Thread {
+            val bitmap = drawable!!.toBitmap()
             Palette.from(bitmap).generate { palette ->
                 val pairs = listOfNotNull(
                     palette?.vibrantSwatch,
@@ -25,17 +22,22 @@ object ColorPairsGenerator {
                     .takeIf { it.isNotEmpty() }
                     ?: listOf(getFallbackPair(context))
 
-                continuation.resume(pairs)
+                onResult(pairs)
             }
-        }
+        }.start()
     }
 
-    private fun getFallbackPair(context: Context): Pair<Int, Int> =
-        ContextCompat.getColor(
-            context,
+    private fun getFallbackPair(context: Context): Pair<Int, Int> = if (Build.VERSION.SDK_INT >= 23) {
+        context.getColor(
             R.color.notix_interstitial_text_color
-        ) to ContextCompat.getColor(
-            context,
+        ) to context.getColor(
             R.color.notix_interstitial_text_background_color
         )
+    } else {
+        context.resources.getColor(
+            R.color.notix_interstitial_text_color
+        ) to context.resources.getColor(
+            R.color.notix_interstitial_text_background_color
+        )
+    }
 }

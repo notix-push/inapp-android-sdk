@@ -2,7 +2,7 @@ package com.notix.notixsdk.interstitial
 
 import java.io.Serializable
 
-internal data class InterstitialData(
+data class InterstitialData(
     val title: String,
     val description: String,
     val imageUrl: String,
