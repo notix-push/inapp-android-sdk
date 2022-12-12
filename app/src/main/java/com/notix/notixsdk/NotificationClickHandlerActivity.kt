@@ -1,12 +1,12 @@
 package com.notix.notixsdk
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
 import com.notix.notixsdk.api.ApiClient
 
-class NotificationClickHandlerActivity: AppCompatActivity() {
+class NotificationClickHandlerActivity: Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

@@ -1,31 +1,27 @@
 package com.notix.notixsdk.interstitial
 
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.ActivityResultRegistry
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 
 internal class InterstitialProvider(
-    private val registry: ActivityResultRegistry,
-    private val callback: (InterstitialResult) -> Unit,
-) : DefaultLifecycleObserver {
+    private val activity: Activity?
+) {
 
     private companion object {
         const val KEY = "INTERSTITIAL_CONTRACT"
     }
 
-    private var interstitialLauncher: ActivityResultLauncher<InterstitialData>? = null
-
-    override fun onCreate(owner: LifecycleOwner) {
-        interstitialLauncher = registry
-            .register(KEY, owner, InterstitialContract(), ::handleResult)
-    }
-
-    fun showInterstitial(data: InterstitialData) {
-        interstitialLauncher?.launch(data)
-    }
-
-    private fun handleResult(result: InterstitialResult) {
-        callback(result)
+    fun showInterstitial(context: Context, data: InterstitialData) {
+        if (activity == null) {
+            val intent = InterstitialContract.createIntent(context, data)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            context.startActivity(intent)
+        } else {
+            activity.startActivityForResult(
+                InterstitialContract.createIntent(activity, data),
+                InterstitialContract.REQUEST_CODE
+            )
+        }
     }
 }

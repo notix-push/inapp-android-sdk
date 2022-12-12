@@ -26,6 +26,8 @@ class StorageProvider {
         const val NOTIX_SUBSCRIBE_REQUEST_VAR_3 = "NOTIX_SUBSCRIBE_REQUEST_VAR_3"
         const val NOTIX_SUBSCRIBE_REQUEST_VAR_4 = "NOTIX_SUBSCRIBE_REQUEST_VAR_4"
         const val NOTIX_SUBSCRIBE_REQUEST_VAR_5 = "NOTIX_SUBSCRIBE_REQUEST_VAR_5"
+
+        const val NOTIX_INTERSTITIAL_ZONE_ID = "NOTIX_INTERSTITIAL_ZONE_ID"
     }
 
     @Synchronized
@@ -148,6 +150,14 @@ class StorageProvider {
 
     fun setMessageContentPayload(context: Context, messageContentPayload: String) {
         putString(context, NOTIX_MESSAGE_CONTENT_DATA, messageContentPayload)
+    }
+
+    fun getInterstitialZoneId(context: Context): Long {
+        return getLong(context, NOTIX_INTERSTITIAL_ZONE_ID)
+    }
+
+    fun setInterstitialZoneId(context: Context, zoneId: Long) {
+        putLong(context, NOTIX_INTERSTITIAL_ZONE_ID, zoneId)
     }
 
     private fun putString(context: Context, key: String, value: String) {

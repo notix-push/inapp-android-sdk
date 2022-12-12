@@ -47,11 +47,11 @@ dependencyResolutionManagement {
 Add it to a module build.gradle file in dependencies
 
 ```xml
-implementation ('com.google.firebase:firebase-messaging:23.0.4') {
+implementation ('com.google.firebase:firebase-messaging:23.0.6') {
     exclude group: "org.apache.httpcomponents", module: "httpclient"
     exclude group: "org.apache.httpcomponents", module: "httpcore"
 }
-implementation 'com.github.notix-push:inapp-android-sdk:0.0.27'
+implementation 'com.github.notix-push:inapp-android-sdk:+'
 ```
 
 ### Create SDK files
