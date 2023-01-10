@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.android.volley.AuthFailureError
 import com.android.volley.Response
+import com.android.volley.VolleyError
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.notix.notixsdk.DomainModels
@@ -35,38 +36,50 @@ class ApiClient {
         context: Context,
         appId: String,
         authToken: String,
-        getConfigDoneCallback: () -> Unit
+        getConfigDoneCallback: () -> Unit,
+        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
     ) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
         val headers = getMainHeaders()
         headers["Authorization-Token"] = authToken
 
-        getRequest(context, url, headers) {
-            try {
-                val dataJson = JSONObject(it)
-                val configDto = RequestModels.ConfigModel(
-                    dataJson.getString("app_id"),
-                    dataJson.getInt("pub_id"),
-                    dataJson.getLong("sender_id")
-                )
+        getRequest(context, url, headers,
+            doResponse = {
+                try {
+                    val dataJson = JSONObject(it)
+                    val configDto = RequestModels.ConfigModel(
+                        dataJson.getString("app_id"),
+                        dataJson.getInt("pub_id"),
+                        dataJson.getLong("sender_id")
+                    )
 
-                if (configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
-                    Log.d("NotixDebug", "invalid config: $it")
-                } else {
-                    storage.setSenderId(context, configDto.senderId)
-                    storage.setPubId(context, configDto.pubId)
-                    storage.setAppId(context, appId)
-                    getConfigDoneCallback()
+                    if (configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
+                        Log.d("NotixDebug", "invalid config: $it")
+                    } else {
+                        storage.setSenderId(context, configDto.senderId)
+                        storage.setPubId(context, configDto.pubId)
+                        storage.setAppId(context, appId)
+                        getConfigDoneCallback()
+                    }
+                } catch (e: JSONException) {
+                    Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
                 }
-            } catch (e: JSONException) {
-                Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
+                onDoneCallback?.invoke(true)
+            },
+            failResponse = {
+                onDoneCallback?.invoke(false)
             }
-        }
+        )
     }
 
     // TODO now it is copy-paste getInterstitial fun
-    fun getMessageContent(context: Context, vars: DomainModels.RequestVars? = null, zoneId: Long?, getMessageContentDoneCallback: () -> Unit) {
+    fun getMessageContent(
+        context: Context,
+        vars: DomainModels.RequestVars? = null,
+        zoneId: Long?,
+        getMessageContentDoneCallback: () -> Unit,
+    ) {
         val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
         val headers = getMainHeaders()
@@ -139,7 +152,12 @@ class ApiClient {
         }
     }
 
-    fun getInterstitial(context: Context, vars: DomainModels.RequestVars? = null, zoneId: Long?, getInterstitialDoneCallback: () -> Unit) {
+    fun getInterstitial(
+        context: Context,
+        vars: DomainModels.RequestVars? = null,
+        zoneId: Long?,
+        getInterstitialDoneCallback: () -> Unit
+    ) {
         val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
         val headers = getMainHeaders()
@@ -418,7 +436,8 @@ class ApiClient {
         context: Context,
         url: String,
         headers: MutableMap<String, String>,
-        doResponse: (response: String) -> Unit
+        doResponse: (response: String) -> Unit,
+        failResponse: (error: VolleyError) -> Unit,
     ) {
         val queue = Volley.newRequestQueue(context)
 
@@ -430,6 +449,7 @@ class ApiClient {
             },
             Response.ErrorListener { error ->
                 Log.d("NotixDebug", "api client error => $error")
+                failResponse(error)
             }
         ) {
             @Throws(AuthFailureError::class)
@@ -448,7 +468,7 @@ class ApiClient {
         body: String,
         doResponse: (response: String) -> Unit,
 
-    ) {
+        ) {
         val queue = Volley.newRequestQueue(context)
 
         val stringRequest: StringRequest = object : StringRequest(

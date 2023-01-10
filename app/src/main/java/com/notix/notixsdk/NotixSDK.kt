@@ -16,8 +16,9 @@ class NotixSDK {
         notixAppId: String,
         notixToken: String,
         receiveTokenCallback: ((String) -> Unit)? = null,
+        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
     ) {
-        init(context, notixAppId, notixToken, null, receiveTokenCallback)
+        init(context, notixAppId, notixToken, null, receiveTokenCallback, onDoneCallback)
     }
 
     fun init(
@@ -26,6 +27,7 @@ class NotixSDK {
         notixToken: String,
         vars: DomainModels.RequestVars? = null,
         receiveTokenCallback: ((String) -> Unit)? = null,
+        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
     ) {
         val receiveTokenEnrichCallback: (String) -> Unit = { data ->
             apiClient.refresh(context, notixAppId, notixToken)
@@ -42,6 +44,6 @@ class NotixSDK {
             notixFirebaseInitProvider!!.init(context, receiveTokenEnrichCallback)
         }
 
-        apiClient.getConfig(context, notixAppId, notixToken, initFirebaseProvider)
+        apiClient.getConfig(context, notixAppId, notixToken, initFirebaseProvider, onDoneCallback)
     }
 }
