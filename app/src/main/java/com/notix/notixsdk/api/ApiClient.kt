@@ -37,7 +37,7 @@ class ApiClient {
         appId: String,
         authToken: String,
         getConfigDoneCallback: () -> Unit,
-        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null,
     ) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
@@ -65,10 +65,9 @@ class ApiClient {
                 } catch (e: JSONException) {
                     Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
                 }
-                onDoneCallback?.invoke(true)
             },
             failResponse = {
-                onDoneCallback?.invoke(false)
+                onFailed?.invoke()
             }
         )
     }

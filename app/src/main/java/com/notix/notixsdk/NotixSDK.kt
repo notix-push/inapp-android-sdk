@@ -15,10 +15,17 @@ class NotixSDK {
         context: Context,
         notixAppId: String,
         notixToken: String,
-        receiveTokenCallback: ((String) -> Unit)? = null,
-        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null,
+        onSuccess: ((String) -> Unit)? = null,
     ) {
-        init(context, notixAppId, notixToken, null, receiveTokenCallback, onDoneCallback)
+        init(
+            context = context,
+            notixAppId = notixAppId,
+            notixToken = notixToken,
+            vars = null,
+            onFailed = onFailed,
+            onSuccess = onSuccess,
+        )
     }
 
     fun init(
@@ -26,12 +33,12 @@ class NotixSDK {
         notixAppId: String,
         notixToken: String,
         vars: DomainModels.RequestVars? = null,
-        receiveTokenCallback: ((String) -> Unit)? = null,
-        onDoneCallback: ((isSuccess: Boolean) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null,
+        onSuccess: ((String) -> Unit)? = null,
     ) {
         val receiveTokenEnrichCallback: (String) -> Unit = { data ->
             apiClient.refresh(context, notixAppId, notixToken)
-            receiveTokenCallback?.invoke(data)
+            onSuccess?.invoke(data)
         }
 
         val initFirebaseProvider = {
@@ -44,6 +51,12 @@ class NotixSDK {
             notixFirebaseInitProvider!!.init(context, receiveTokenEnrichCallback)
         }
 
-        apiClient.getConfig(context, notixAppId, notixToken, initFirebaseProvider, onDoneCallback)
+        apiClient.getConfig(
+            context = context,
+            appId = notixAppId,
+            authToken = notixToken,
+            getConfigDoneCallback = initFirebaseProvider,
+            onFailed = onFailed,
+        )
     }
 }
