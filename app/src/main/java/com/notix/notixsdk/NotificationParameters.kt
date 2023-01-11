@@ -17,4 +17,5 @@ class NotificationParameters {
     var sound: Uri? = null
     var priority: Int = NotificationCompat.PRIORITY_DEFAULT
     var showToast: Boolean = false
+    var showOnlyLastNotification: Boolean = false
 }

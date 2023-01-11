@@ -23,18 +23,28 @@ import com.notix.notixsdk.utils.getOrFallback
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URL
+import kotlin.random.Random
 
 
 @Suppress("unused")
 class NotificationsService {
     private var apiClient: ApiClient = ApiClient()
 
-    fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent) {
+    fun handleNotification(
+        context: Context,
+        resolver: INotificationActivityResolver,
+        intent: Intent
+    ) {
         val activity = resolver.resolveActivity(intent)
         processNotification(context, activity, intent, NotificationParameters())
     }
 
-    fun handleNotification(context: Context, resolver: INotificationActivityResolver, intent: Intent, notificationParameters: NotificationParameters) {
+    fun handleNotification(
+        context: Context,
+        resolver: INotificationActivityResolver,
+        intent: Intent,
+        notificationParameters: NotificationParameters
+    ) {
         if (isAppOnForeground(context) && !hasTargetUrl(intent) && notificationParameters.showToast) {
             showToast(context, intent)
         }
@@ -62,7 +72,7 @@ class NotificationsService {
         return false
     }
 
-    private fun showToast(context: Context, intent: Intent){
+    private fun showToast(context: Context, intent: Intent) {
         val text = intent.getStringExtra("text")
 
         if (text == null || text == "") {
@@ -74,14 +84,22 @@ class NotificationsService {
         }
     }
 
-    private fun processNotification(context: Context, activity: Class<*>, intent: Intent, notificationParameters: NotificationParameters) {
+    private fun processNotification(
+        context: Context,
+        activity: Class<*>,
+        intent: Intent,
+        notificationParameters: NotificationParameters
+    ) {
         val pingData = intent.getStringExtra("pd")
 
         val showNotificationThread = Thread {
             try {
                 showNotification(context, activity, intent, notificationParameters)
             } catch (e: Exception) {
-                Log.d("NotixDebug", "Show notification thread crash: ${e.message?:"[exception message null]"}")
+                Log.d(
+                    "NotixDebug",
+                    "Show notification thread crash: ${e.message ?: "[exception message null]"}"
+                )
                 e.printStackTrace()
             }
         }
@@ -108,15 +126,26 @@ class NotificationsService {
             val item: JSONObject = dataJsonArray.getJSONObject(i)
             intent.putExtra("title", item.getOrFallback("title", ""))
             intent.putExtra("text", item.getOrFallback("description", ""))
-            intent.putExtra("click_data", if (item.has("click_data")) item.getString("click_data") else "")
-            intent.putExtra("impression_data", if (item.has("impression_data")) item.getString("impression_data") else "")
+            intent.putExtra(
+                "click_data",
+                if (item.has("click_data")) item.getString("click_data") else ""
+            )
+            intent.putExtra(
+                "impression_data",
+                if (item.has("impression_data")) item.getString("impression_data") else ""
+            )
             intent.putExtra("target_url_data", item.getOrFallback("target_url", ""))
             intent.putExtra("icon_url", item.getOrFallback("icon_url", ""))
             intent.putExtra("image_url", item.getOrFallback("image_url", ""))
         }
     }
 
-    private fun showNotification(context: Context, activity: Class<*>, intent: Intent, notificationParameters: NotificationParameters) {
+    private fun showNotification(
+        context: Context,
+        activity: Class<*>,
+        intent: Intent,
+        notificationParameters: NotificationParameters
+    ) {
         var title = intent.getStringExtra("title")
         var text = intent.getStringExtra("text")
         val clickData = intent.getStringExtra("click_data")
@@ -132,9 +161,9 @@ class NotificationsService {
             text = notificationParameters.text
         }
 
-        val rootIntent : Intent
+        val rootIntent: Intent
 
-        val notificationIntent : Intent
+        val notificationIntent: Intent
 
         if (!targetUrlData.isNullOrEmpty()) {
             rootIntent = Intent(Intent.ACTION_VIEW)
@@ -153,7 +182,7 @@ class NotificationsService {
 
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
 
-        val pendingIntent:PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_IMMUTABLE)
         } else {
             // TODO NEED CHECK WORK FLAG_ONE_SHOT
@@ -168,24 +197,39 @@ class NotificationsService {
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setDefaults(notificationParameters.defaults)
             .setSmallIcon(notificationParameters.smallIcon)
-            .setLargeIcon(icon ?: BitmapFactory.decodeResource(context.resources, notificationParameters.largeIcon))
-            .setStyle(NotificationCompat.BigPictureStyle()
-                .bigPicture(image)
-                .bigLargeIcon(null))
+            .setLargeIcon(
+                icon ?: BitmapFactory.decodeResource(
+                    context.resources,
+                    notificationParameters.largeIcon
+                )
+            )
+            .setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(image)
+                    .bigLargeIcon(null)
+            )
             .setContentTitle(title)
             .setContentText(text)
             .setAutoCancel(true)
             .setVibrate(notificationParameters.vibrationPattern)
-            .setSound(notificationParameters.sound ?: defaultSoundUri, AudioManager.STREAM_NOTIFICATION)
+            .setSound(
+                notificationParameters.sound ?: defaultSoundUri,
+                AudioManager.STREAM_NOTIFICATION
+            )
             .setPriority(notificationParameters.priority)
             .setColor(notificationParameters.color)
             .setContentIntent(pendingIntent)
             .build()
 
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "NOTIX_NOTIFICATION_CHANNEL", NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(
+                channelId,
+                "NOTIX_NOTIFICATION_CHANNEL",
+                NotificationManager.IMPORTANCE_HIGH
+            )
             channel.enableVibration(true)
             channel.vibrationPattern = notificationParameters.vibrationPattern
             if (!notificationParameters.showBadgeIcon) {
@@ -194,10 +238,13 @@ class NotificationsService {
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder)
+        val notificationId =
+            if (notificationParameters.showOnlyLastNotification) 0 else Random.nextInt(Int.MAX_VALUE)
+
+        notificationManager.notify(notificationId, notificationBuilder)
     }
 
-    private fun loadImg(imgUrl: String?) : Bitmap? {
+    private fun loadImg(imgUrl: String?): Bitmap? {
         if (imgUrl != null && imgUrl != "") {
             try {
                 val url = URL(imgUrl)
