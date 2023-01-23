@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.35'
+    sdkVersion = '0.0.36'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
