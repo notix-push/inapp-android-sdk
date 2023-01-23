@@ -267,11 +267,13 @@ class ApiClient {
 
         if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
-            return
         }
         try {
-            val dataJson = JSONObject(impressionData)
-            dataJson.put("app_id", appId)
+            val dataJson = JSONObject(impressionData).apply {
+                if (!appId.isNullOrEmpty()) {
+                    put("app_id", appId)
+                }
+            }
 
             postRequest(context, url, headers, dataJson.toString()) {
                 Log.d("NotixDebug", "impression tracked")
@@ -295,12 +297,13 @@ class ApiClient {
 
         if (appId.isNullOrEmpty()) {
             Log.d("NotixDebug", "app id is empty")
-            return
         }
 
         try {
             val dataJson = JSONObject(clickData).apply {
-                put("app_id", appId)
+                if (!appId.isNullOrEmpty()) {
+                    put("app_id", appId)
+                }
             }
 
             postRequest(context, url, headers, dataJson.toString()) {
