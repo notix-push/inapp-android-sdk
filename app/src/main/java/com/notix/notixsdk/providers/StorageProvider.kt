@@ -1,9 +1,10 @@
-package com.notix.notixsdk
+package com.notix.notixsdk.providers
 
 import android.app.Service
 import android.content.Context
 import android.content.SharedPreferences
 import android.text.format.DateFormat
+import com.notix.notixsdk.domain.DomainModels
 import java.util.*
 
 class StorageProvider {
@@ -27,7 +28,21 @@ class StorageProvider {
         const val NOTIX_SUBSCRIBE_REQUEST_VAR_4 = "NOTIX_SUBSCRIBE_REQUEST_VAR_4"
         const val NOTIX_SUBSCRIBE_REQUEST_VAR_5 = "NOTIX_SUBSCRIBE_REQUEST_VAR_5"
 
-        const val NOTIX_INTERSTITIAL_ZONE_ID = "NOTIX_INTERSTITIAL_ZONE_ID"
+        const val NOTIX_INTERSTITIAL_STARTUP_ENABLED = "NOTIX_INTERSTITIAL_STARTUP_ENABLED"
+        const val NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID = "NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID"
+
+        const val NOTIX_INTERSTITIAL_REQUEST_VAR_1 = "NOTIX_INTERSTITIAL_REQUEST_VAR_1"
+        const val NOTIX_INTERSTITIAL_REQUEST_VAR_2 = "NOTIX_INTERSTITIAL_REQUEST_VAR_2"
+        const val NOTIX_INTERSTITIAL_REQUEST_VAR_3 = "NOTIX_INTERSTITIAL_REQUEST_VAR_3"
+        const val NOTIX_INTERSTITIAL_REQUEST_VAR_4 = "NOTIX_INTERSTITIAL_REQUEST_VAR_4"
+        const val NOTIX_INTERSTITIAL_REQUEST_VAR_5 = "NOTIX_INTERSTITIAL_REQUEST_VAR_5"
+
+        const val NOTIX_INTERSTITIAL_LAST_ZONE_ID = "NOTIX_INTERSTITIAL_ZONE_ID"
+
+        const val NOTIX_LAST_RUN_VERSION = "NOTIX_LAST_RUN_VERSION"
+        const val NOTIX_RUN_COUNT = "NOTIX_RUN_COUNT"
+        const val NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED =
+            "NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED"
     }
 
     @Synchronized
@@ -65,6 +80,30 @@ class StorageProvider {
         putLong(context, NOTIX_REMOTE_SENDER_ID, senderId)
     }
 
+    fun getNotificationsPermissionsAllowed(context: Context): Boolean {
+        return getBoolean(context, NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED)
+    }
+
+    fun setNotificationsPermissionsAllowed(context: Context, allowed: Boolean) {
+        putBoolean(context, NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED, allowed)
+    }
+
+    fun getLastRunVersion(context: Context): String? {
+        return getString(context, NOTIX_LAST_RUN_VERSION)
+    }
+
+    fun setLastRunVersion(context: Context, lastRunVersion: String) {
+        putString(context, NOTIX_LAST_RUN_VERSION, lastRunVersion)
+    }
+
+    fun getRunCount(context: Context): Long? {
+        return getLong(context, NOTIX_RUN_COUNT)
+    }
+
+    fun setRunCount(context: Context, runCount: Long) {
+        putLong(context, NOTIX_RUN_COUNT, runCount)
+    }
+
     fun getPushVars(context: Context): DomainModels.RequestVars {
         val var1 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_1) ?: ""
         val var2 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_2) ?: ""
@@ -93,6 +132,37 @@ class StorageProvider {
         }
         if (vars.var5.isNotEmpty()) {
             putString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_5, vars.var5)
+        }
+    }
+
+    fun getInterstitialVars(context: Context): DomainModels.RequestVars {
+        val var1 = getString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_1) ?: ""
+        val var2 = getString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_2) ?: ""
+        val var3 = getString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_3) ?: ""
+        val var4 = getString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_4) ?: ""
+        val var5 = getString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_5) ?: ""
+
+        return DomainModels.RequestVars(var1, var2, var3, var4, var5)
+    }
+
+    fun setInterstitialVars(context: Context, vars: DomainModels.RequestVars? = null) {
+        if (vars == null) {
+            return
+        }
+        if (vars.var1.isNotEmpty()) {
+            putString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_1, vars.var1)
+        }
+        if (vars.var2.isNotEmpty()) {
+            putString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_2, vars.var2)
+        }
+        if (vars.var3.isNotEmpty()) {
+            putString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_3, vars.var3)
+        }
+        if (vars.var4.isNotEmpty()) {
+            putString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_4, vars.var4)
+        }
+        if (vars.var5.isNotEmpty()) {
+            putString(context, NOTIX_INTERSTITIAL_REQUEST_VAR_5, vars.var5)
         }
     }
 
@@ -152,12 +222,28 @@ class StorageProvider {
         putString(context, NOTIX_MESSAGE_CONTENT_DATA, messageContentPayload)
     }
 
-    fun getInterstitialZoneId(context: Context): Long {
-        return getLong(context, NOTIX_INTERSTITIAL_ZONE_ID)
+    fun getInterstitialLastZoneId(context: Context): Long {
+        return getLong(context, NOTIX_INTERSTITIAL_LAST_ZONE_ID)
     }
 
-    fun setInterstitialZoneId(context: Context, zoneId: Long) {
-        putLong(context, NOTIX_INTERSTITIAL_ZONE_ID, zoneId)
+    fun setInterstitialLastZoneId(context: Context, zoneId: Long) {
+        putLong(context, NOTIX_INTERSTITIAL_LAST_ZONE_ID, zoneId)
+    }
+
+    fun getInterstitialStartupEnabled(context: Context): Boolean {
+        return getBoolean(context, NOTIX_INTERSTITIAL_STARTUP_ENABLED)
+    }
+
+    fun setInterstitialStartupEnabled(context: Context, enabled: Boolean) {
+        putBoolean(context, NOTIX_INTERSTITIAL_STARTUP_ENABLED, enabled)
+    }
+
+    fun getInterstitialDefaultZoneId(context: Context): Long {
+        return getLong(context, NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID)
+    }
+
+    fun setInterstitialDefaultZoneIdd(context: Context, zoneId: Long) {
+        putLong(context, NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID, zoneId)
     }
 
     private fun putString(context: Context, key: String, value: String) {
@@ -209,6 +295,23 @@ class StorageProvider {
             NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
         return sharedPrefs.getLong(key, 0)
+    }
+
+    private fun putBoolean(context: Context, key: String, value: Boolean) {
+        val sharedPrefs = context.getSharedPreferences(
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
+        )
+
+        val editor: SharedPreferences.Editor = sharedPrefs.edit()
+        editor.putBoolean(key, value)
+        editor.apply()
+    }
+
+    private fun getBoolean(context: Context, key: String): Boolean {
+        val sharedPrefs = context.getSharedPreferences(
+            NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
+        )
+        return sharedPrefs.getBoolean(key, false)
     }
 
     fun clearInterstitial(context: Context) {

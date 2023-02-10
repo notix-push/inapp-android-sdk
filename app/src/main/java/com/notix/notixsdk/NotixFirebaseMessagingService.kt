@@ -5,15 +5,17 @@ import android.os.Build
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.utils.permissionsAllowed
 import org.json.JSONObject
 
-open class NotixFirebaseMessagingService: FirebaseMessagingService() {
+open class NotixFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var intent: Intent
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        val event: String =  getValueFromData(message.data, "event", "main")
+        val event: String = getValueFromData(message.data, "event", "main")
         val title: String = getValueFromData(message.data, "title", "")
         val text: String = getValueFromData(message.data, "text", "")
         val clickData: String = getValueFromData(message.data, "click_data", "")
@@ -40,6 +42,9 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         intent.putExtra("image_url", imageUrl)
         intent.putExtra("pd", pingData)
 
+        if (!permissionsAllowed(this)) {
+            return
+        }
 
         if (pingData.isEmpty() || JSONObject(pingData).length() == 0) {
             ApiClient().impression(this, impressionData)
@@ -74,7 +79,10 @@ open class NotixFirebaseMessagingService: FirebaseMessagingService() {
         if (appId != null && packageName != null) {
             apiClient.subscribe(this, appId, uuid, packageName, token)
         } else {
-            Log.d("NotixDebug", "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)")
+            Log.d(
+                "NotixDebug",
+                "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)"
+            )
         }
     }
 }

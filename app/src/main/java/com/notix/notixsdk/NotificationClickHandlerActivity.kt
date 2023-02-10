@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.providers.StorageProvider
 
 class NotificationClickHandlerActivity: Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

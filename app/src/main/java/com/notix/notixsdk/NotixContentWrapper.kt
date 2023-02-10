@@ -3,6 +3,8 @@ package com.notix.notixsdk
 import android.content.Context
 import android.util.Log
 import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.domain.DomainModels
+import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
 import org.json.JSONArray
 import org.json.JSONObject

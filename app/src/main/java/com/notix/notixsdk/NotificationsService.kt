@@ -19,7 +19,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
+import com.notix.notixsdk.utils.permissionsAllowed
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URL
@@ -28,13 +30,18 @@ import kotlin.random.Random
 
 @Suppress("unused")
 class NotificationsService {
-    private var apiClient: ApiClient = ApiClient()
+    private val apiClient = ApiClient()
+    private val storage = StorageProvider()
 
     fun handleNotification(
         context: Context,
         resolver: INotificationActivityResolver,
         intent: Intent
     ) {
+        if (!permissionsAllowed(context)) {
+            return
+        }
+
         val activity = resolver.resolveActivity(intent)
         processNotification(context, activity, intent, NotificationParameters())
     }
@@ -45,6 +52,10 @@ class NotificationsService {
         intent: Intent,
         notificationParameters: NotificationParameters
     ) {
+        if (!permissionsAllowed(context)) {
+            return
+        }
+
         if (isAppOnForeground(context) && !hasTargetUrl(intent) && notificationParameters.showToast) {
             showToast(context, intent)
         }

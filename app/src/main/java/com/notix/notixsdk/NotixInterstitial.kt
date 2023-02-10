@@ -3,9 +3,10 @@ package com.notix.notixsdk
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import androidx.work.*
 import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.domain.DomainModels
 import com.notix.notixsdk.interstitial.*
+import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
 import org.json.JSONArray
 import org.json.JSONObject
@@ -37,6 +38,11 @@ class NotixInterstitial private constructor() {
         customButtons: List<InterstitialButton>?,
         closingSettings: ClosingSettings?,
     ) {
+        if (!NotixSDK.instance.hasInitialized()) {
+            Log.d("NotixDebug", "Notix SDK was not initialized")
+            return
+        }
+
         clickedCallback = interstitialClicked
         dismissedCallback = interstitialDismissed
         errorCallback = interstitialError
@@ -56,7 +62,7 @@ class NotixInterstitial private constructor() {
         onLoadCallback: () -> Unit
     ) {
         if (zoneId != null && zoneId > 0) {
-            storage.setInterstitialZoneId(context, zoneId)
+            storage.setInterstitialLastZoneId(context, zoneId)
         }
 
         isLoaded = false
@@ -164,21 +170,8 @@ class NotixInterstitial private constructor() {
         var interstitialError: () -> Unit = {}
         var customButtons: List<InterstitialButton>? = null
         var closingSettings: ClosingSettings? = null
-        var isDisabled: Boolean = false
-        var defaultZoneId: Long? = null
-        var vars: DomainModels.RequestVars? = null
 
         fun build() = NotixInterstitial().apply {
-            if (activity != null && !this@Builder.isDisabled) {
-                doStartup(
-                    activity,
-                    this@Builder.customButtons?.get(0),
-                    this@Builder.closingSettings,
-                    this@Builder.defaultZoneId,
-                    this@Builder.vars,
-                )
-            }
-
             init(
                 activity = activity,
                 interstitialClicked = interstitialClicked,
@@ -188,75 +181,5 @@ class NotixInterstitial private constructor() {
                 closingSettings = this@Builder.closingSettings,
             )
         }
-    }
-
-    private fun doStartup(
-        activity: Activity,
-        customButton: InterstitialButton?,
-        closingSettings: ClosingSettings?,
-        defaultZoneId: Long?,
-        vars: DomainModels.RequestVars?
-
-    ) {
-        //TODO Network connected
-        val constraints: Constraints = Constraints.Builder()
-            .build()
-
-        val data = Data.Builder()
-
-        if (customButton != null) {
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_BUTTON_TEXT, customButton.text)
-            data.putString(
-                InterstitialStartupWorker.NOTIX_WORKER_BUTTON_TEXT_COLOR,
-                customButton.textColor
-            )
-            data.putString(
-                InterstitialStartupWorker.NOTIX_WORKER_BUTTON_BG_COLOR,
-                customButton.backgroundColor
-            )
-        }
-
-        if (closingSettings != null) {
-            data.putInt(
-                InterstitialStartupWorker.NOTIX_WORKER_CLOSE_TIMEOUT,
-                closingSettings.timeout
-            )
-            data.putFloat(
-                InterstitialStartupWorker.NOTIX_WORKER_CLOSE_OPACITY,
-                closingSettings.opacity
-            )
-            data.putFloat(
-                InterstitialStartupWorker.NOTIX_WORKER_CLOSE_SIZE,
-                closingSettings.sizePercent
-            )
-        }
-
-        if (defaultZoneId != null) {
-            data.putLong(InterstitialStartupWorker.NOTIX_WORKER_ZONE_ID, defaultZoneId)
-        }
-
-        if (vars != null) {
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_VAR_1, vars.var1)
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_VAR_2, vars.var2)
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_VAR_3, vars.var3)
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_VAR_4, vars.var4)
-            data.putString(InterstitialStartupWorker.NOTIX_WORKER_VAR_5, vars.var5)
-        }
-
-        //TODO Check api version + send data
-        val interstitialWorkRequest: OneTimeWorkRequest =
-            OneTimeWorkRequest.Builder(InterstitialStartupWorker::class.java)
-                .setConstraints(constraints)
-                .setInputData(data.build())
-                .build()
-
-
-        WorkManager.getInstance(activity)
-            .enqueueUniqueWork(
-                InterstitialStartupWorker.NOTIX_WORKER_NAME,
-                ExistingWorkPolicy.REPLACE,
-                interstitialWorkRequest
-            )
-
     }
 }

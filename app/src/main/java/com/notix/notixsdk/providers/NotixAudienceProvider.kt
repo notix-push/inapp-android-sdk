@@ -1,4 +1,4 @@
-package com.notix.notixsdk
+package com.notix.notixsdk.providers
 
 import android.content.Context
 import com.notix.notixsdk.api.ApiClient
