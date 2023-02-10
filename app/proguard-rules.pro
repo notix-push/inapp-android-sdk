@@ -25,18 +25,18 @@
 -keep class com.notix.notixsdk.interstitial.InterstitialButton { *; }
 -keep class com.notix.notixsdk.interstitial.ClosingSettings { *; }
 -keep class com.notix.notixsdk.interstitial.ClosingSettings { *; }
--keep class com.notix.notixsdk.DomainModels { *; }
--keep class com.notix.notixsdk.DomainModels$RequestVars { *; }
--keepclassmembers class com.notix.notixsdk.DomainModels { *; }
+-keep class com.notix.notixsdk.domain.DomainModels { *; }
+-keep class com.notix.notixsdk.domain.DomainModels$RequestVars { *; }
+-keepclassmembers class com.notix.notixsdk.domain.DomainModels { *; }
 -keep class com.notix.notixsdk.INotificationActivityResolver { *; }
 -keep class com.notix.notixsdk.NotificationClickHandlerActivity  { public *; }
 -keep class com.notix.notixsdk.NotificationParameters  { *; }
 -keep class com.notix.notixsdk.NotificationsService  { *; }
--keep class com.notix.notixsdk.NotixAudienceProvider  { *; }
+-keep class com.notix.notixsdk.providers.NotixAudienceProvider  { *; }
 -keep class com.notix.notixsdk.ContentData  { *; }
 -keep class com.notix.notixsdk.NotixContentWrapper  { public *; }
 -keep class com.notix.notixsdk.NotixFirebaseMessagingService  { public *; }
--keep class com.notix.notixsdk.StorageProvider  { public *; }
+-keep class com.notix.notixsdk.providers.StorageProvider  { public *; }
 -keep class com.notix.notixsdk.* {  *; }
 -keep class com.notix.notixsdk.interstitial.* {  *; }
 

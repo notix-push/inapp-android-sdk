@@ -1,11 +1,14 @@
-package com.notix.notixsdk
+package com.notix.notixsdk.workers
 
 import android.content.Context
 import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.notix.notixsdk.NotixInterstitial
+import com.notix.notixsdk.domain.DomainModels
 import com.notix.notixsdk.interstitial.ClosingSettings
 import com.notix.notixsdk.interstitial.InterstitialButton
+import com.notix.notixsdk.providers.StorageProvider
 
 class InterstitialStartupWorker(context: Context, workerParameters: WorkerParameters) :
     Worker(context, workerParameters) {
@@ -55,7 +58,7 @@ class InterstitialStartupWorker(context: Context, workerParameters: WorkerParame
         var zoneId = inputData.getLong(NOTIX_WORKER_ZONE_ID, 0)
 
         if (zoneId == 0L) {
-            zoneId = StorageProvider().getInterstitialZoneId(applicationContext)
+            zoneId = StorageProvider().getInterstitialLastZoneId(applicationContext)
         }
 
         interstitial.load(

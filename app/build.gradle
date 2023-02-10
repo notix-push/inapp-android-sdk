@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    sdkVersion = '0.0.38'
+    sdkVersion = '0.0.40'
     sdkGroup = 'com.github.notix-push'
     artifactId = 'inapp-android-sdk'
 }
@@ -14,11 +14,11 @@ version = "$sdkVersion"
 group = "$sdkGroup"
 
 android {
-    compileSdk 31
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 31
+        targetSdk 33
         versionName "$sdkVersion"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -43,7 +43,7 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    compileSdkVersion 31
+    compileSdkVersion 33
     buildToolsVersion '32.0.0'
     configurations {
         all*.exclude group: 'org.apache.httpcomponents', module: 'httpclient'

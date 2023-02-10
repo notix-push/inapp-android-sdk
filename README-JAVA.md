@@ -126,6 +126,7 @@ Add it to AndroidManifest.xml file in application part
     </intent-filter>
 </service>
 ```
+**If you have already declared firebase service - replace it**
 
 ### Integration code
 Add variable to Launcher activity
@@ -137,10 +138,19 @@ Add it to onCreate method in your launcher activity (for example MainActivity)
 
 
 ```java
-sdk.init(this, "notix-app-id", "notix-auth-token", null);
+NotixSDKConfig config = new NotixSDKConfig();
+config.setInterstitialStartupEnabled(false);
+
+NotixSDK.instance.init(this, "notix-app-id", "notix-auth-token", config);
 ```
 
-Replace notix-app-id and notix-auth-token with your
+And enable push notifications:
+
+```kotlin
+NotixSDK.instance.enablePushNotifications(this, null, null, null);
+```
+
+**Replace notix-app-id and notix-auth-token with your**
 
 ###Done!
 
@@ -154,11 +164,11 @@ You can also manage user audiences (see *link to audiences*)
 just use:
 
 ```java
-notixSdk.getAudiences().add(this, "custom-audience");
+NotixSDK.instance.getAudiences().add(this, "custom-audience");
 ```
 
 ```java
-notixSdk.getAudiences().delete(this, "custom-audience");
+NotixSDK.instance.getAudiences().delete(this, "custom-audience");
 ```
 
 #### Events

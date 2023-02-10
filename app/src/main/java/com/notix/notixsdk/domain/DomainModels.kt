@@ -1,4 +1,4 @@
-package com.notix.notixsdk
+package com.notix.notixsdk.domain
 
 import org.json.JSONObject
 
