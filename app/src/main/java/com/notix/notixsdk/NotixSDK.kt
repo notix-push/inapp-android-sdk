@@ -5,8 +5,7 @@ import android.content.Intent
 import android.util.Log
 import com.notix.notixsdk.api.ApiClient
 import com.notix.notixsdk.domain.DomainModels
-import com.notix.notixsdk.domain.NotixSDKInvalidAuthException
-import com.notix.notixsdk.domain.NotixSDKNotInitializedException
+import com.notix.notixsdk.domain.NotixCallback
 import com.notix.notixsdk.providers.NotixAudienceProvider
 import com.notix.notixsdk.providers.NotixFirebaseInitProvider
 import com.notix.notixsdk.providers.StorageProvider
@@ -26,28 +25,38 @@ class NotixSDK {
     private val apiClient = ApiClient()
     private val metricService = MetricsService()
 
-    // public providers
+    // public Units
     val audiences: NotixAudienceProvider = NotixAudienceProvider()
+    var statusCallback: ((NotixCallback) -> Unit)? = null
 
     fun init(
         context: Context,
         notixAppId: String,
         notixToken: String,
-        config: NotixSDKConfig = NotixSDKConfig()
+        config: NotixSDKConfig = NotixSDKConfig(),
+        callbacksHandler: ((NotixCallback) -> Unit)? = null,
     ) {
         storage.setAppId(context, notixAppId)
         storage.setAuthToken(context, notixToken)
         storage.setPackageName(context, context.packageName)
         storage.getUUID(context)
 
+        if (!config.customUserAgent.isNullOrEmpty()) {
+            storage.setCustomUserAgent(context, config.customUserAgent!!)
+        }
+
         metricService.incrementRunCount(context)
         metricService.doGeneralMetric(context)
 
         storage.setInterstitialStartupEnabled(context, config.interstitialStartupEnabled)
-        storage.setInterstitialDefaultZoneIdd(context, config.interstitialDefaultZoneId)
+        storage.setInterstitialDefaultZoneId(context, config.interstitialDefaultZoneId)
         storage.setInterstitialVars(context, config.interstitialDefaultVars)
 
         StartupService().interstitialStartup(context = context)
+
+        if (callbacksHandler != null) {
+            statusCallback = callbacksHandler
+        }
 
         hasInitialized = true
     }
@@ -55,51 +64,19 @@ class NotixSDK {
     fun enablePushNotifications(
         context: Context,
         vars: DomainModels.RequestVars? = null,
-        onFailed: (() -> Unit)? = null,
-        onSuccess: ((String) -> Unit)? = null,
     ) {
-        val intent = Intent(context, NotificationsPermissionsActivity::class.java)
-        context.startActivity(intent)
-
         if (!hasInitialized) {
             Log.d("NotixDebug", "Notix SDK was not initialized")
             return
         }
 
-        val appId = storage.getAppId(context)
-        val authToken = storage.getAuthToken(context)
+        storage.setPushVars(context, vars)
 
-        if (appId.isNullOrEmpty()) {
-            Log.d("NotixDebug", "App id cannot be null or empty")
-            return
-        }
-        if (authToken.isNullOrEmpty()) {
-            Log.d("NotixDebug", "Auth token cannot be null or empty")
-            return
-        }
+        val intent = Intent(context, NotificationsPermissionsActivity::class.java)
+        intent.putExtra("app_id", storage.getAppId(context))
+        intent.putExtra("auth_token", storage.getAuthToken(context))
 
-        val receiveTokenEnrichCallback: (String) -> Unit = { data ->
-            apiClient.refresh(context, appId, authToken)
-            onSuccess?.invoke(data)
-        }
-
-        val initFirebaseProvider = {
-            storage.setPackageName(context, context.packageName)
-            storage.setAuthToken(context, authToken)
-            storage.setPushVars(context, vars)
-            storage.getUUID(context)
-
-            notixFirebaseInitProvider = NotixFirebaseInitProvider()
-            notixFirebaseInitProvider!!.init(context, receiveTokenEnrichCallback)
-        }
-
-        apiClient.getConfig(
-            context = context,
-            appId = appId,
-            authToken = authToken,
-            getConfigDoneCallback = initFirebaseProvider,
-            onFailed = onFailed,
-        )
+        context.startActivity(intent)
     }
 
     fun hasInitialized(): Boolean {

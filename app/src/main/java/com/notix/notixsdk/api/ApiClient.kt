@@ -2,25 +2,23 @@ package com.notix.notixsdk.api
 
 import android.content.Context
 import android.util.Log
-import com.notix.notixsdk.domain.DomainModels
+import com.notix.notixsdk.NotixSDK
 import com.notix.notixsdk.R
+import com.notix.notixsdk.domain.*
 import com.notix.notixsdk.providers.StorageProvider
 import org.json.JSONException
 import org.json.JSONObject
 
 class ApiClient : BaseHttpClient() {
-    private val storage = StorageProvider()
-
     fun getConfig(
         context: Context,
         appId: String,
         authToken: String,
         getConfigDoneCallback: () -> Unit,
-        onFailed: (() -> Unit)? = null,
     ) {
         val url = "$NOTIX_API_BASE_ROUTE/android/config?app_id=$appId"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
         headers["Authorization-Token"] = authToken
 
         getRequest(context, url, headers,
@@ -35,18 +33,29 @@ class ApiClient : BaseHttpClient() {
 
                     if (configDto.appId == "" || configDto.senderId == 0L || configDto.pubId == 0) {
                         Log.d("NotixDebug", "invalid config: $it")
+                        NotixSDK.instance.statusCallback?.invoke(
+                            NotixConfigLoadCallback(NotixCallbackStatus.FAILED, it)
+                        )
                     } else {
                         storage.setSenderId(context, configDto.senderId)
                         storage.setPubId(context, configDto.pubId)
                         storage.setAppId(context, appId)
                         getConfigDoneCallback()
+                        NotixSDK.instance.statusCallback?.invoke(
+                            NotixConfigLoadCallback(NotixCallbackStatus.SUCCESS, it)
+                        )
                     }
                 } catch (e: JSONException) {
                     Log.d("NotixDebug", "invalid config json: $it, ${e.message}")
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixConfigLoadCallback(NotixCallbackStatus.FAILED, e.message)
+                    )
                 }
             },
             failResponse = {
-                onFailed?.invoke()
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixConfigLoadCallback(NotixCallbackStatus.FAILED, it.message)
+                )
             }
         )
     }
@@ -56,11 +65,13 @@ class ApiClient : BaseHttpClient() {
         context: Context,
         vars: DomainModels.RequestVars? = null,
         zoneId: Long?,
+        experiment: Int?,
         getMessageContentDoneCallback: () -> Unit,
+        getMessageContentFailedCallback: (() -> Unit)? = null,
     ) {
         val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val uuid = StorageProvider().getUUID(context)
 
@@ -97,14 +108,25 @@ class ApiClient : BaseHttpClient() {
                 if (zoneId != null && zoneId > 0) {
                     put("az", zoneId)
                 }
+
+                if (experiment != null) {
+                    put("experiment", experiment)
+                }
             }
 
-            postRequest(context, url, headers, dataJson.toString()) {
-                storage.setMessageContentPayload(context, it)
+            postRequest(context, url, headers, dataJson.toString(),
+                doResponse = {
+                    storage.setMessageContentPayload(context, it)
 
-                getMessageContentDoneCallback()
-                Log.d("NotixDebug", "message content loaded")
-            }
+                    getMessageContentDoneCallback()
+                    Log.d("NotixDebug", "message content loaded")
+                },
+                failResponse = {
+                    if (getMessageContentFailedCallback != null) {
+                        getMessageContentFailedCallback()
+                    }
+                }
+            )
         } catch (e: JSONException) {
             Log.d(
                 "NotixDebug",
@@ -116,12 +138,22 @@ class ApiClient : BaseHttpClient() {
     fun getPushData(context: Context, pd: String, getPushDataCallback: (response: String) -> Unit) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ewant"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         try {
-            postRequest(context, url, headers, pd) {
-                getPushDataCallback(it)
-            }
+            postRequest(context, url, headers, pd,
+                doResponse = {
+                    getPushDataCallback(it)
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixPushDataLoadCallback(NotixCallbackStatus.SUCCESS, it)
+                    )
+                },
+                failResponse = {
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixPushDataLoadCallback(NotixCallbackStatus.FAILED, it.message)
+                    )
+                }
+            )
         } catch (e: JSONException) {
             Log.d(
                 "NotixDebug",
@@ -134,11 +166,13 @@ class ApiClient : BaseHttpClient() {
         context: Context,
         vars: DomainModels.RequestVars? = null,
         zoneId: Long?,
-        getInterstitialDoneCallback: () -> Unit
+        experiment: Int?,
+        getInterstitialDoneCallback: () -> Unit,
+        getInterstitialFailedCallback: (() -> Unit)? = null,
     ) {
         val url = "$NOTIX_BASE_ROUTE/interstitial/ewant"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val uuid = StorageProvider().getUUID(context)
 
@@ -175,14 +209,25 @@ class ApiClient : BaseHttpClient() {
                 if (zoneId != null && zoneId > 0) {
                     put("az", zoneId)
                 }
+
+                if (experiment != null) {
+                    put("experiment", experiment)
+                }
             }
 
-            postRequest(context, url, headers, dataJson.toString()) {
-                storage.setInterstitialPayload(context, it)
+            postRequest(context, url, headers, dataJson.toString(),
+                doResponse = {
+                    storage.setInterstitialPayload(context, it)
 
-                getInterstitialDoneCallback()
-                Log.d("NotixDebug", "interstitial loaded")
-            }
+                    getInterstitialDoneCallback()
+                    Log.d("NotixDebug", "interstitial loaded")
+                },
+                failResponse = {
+                    if (getInterstitialFailedCallback != null) {
+                        getInterstitialFailedCallback()
+                    }
+                }
+            )
         } catch (e: JSONException) {
             Log.d(
                 "NotixDebug",
@@ -200,7 +245,7 @@ class ApiClient : BaseHttpClient() {
     ) {
         val url = "$NOTIX_EVENTS_BASE_ROUTE/android/subscribe"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val createdDate = StorageProvider().getCreatedDate(context)
         if (createdDate.isEmpty()) {
@@ -227,9 +272,19 @@ class ApiClient : BaseHttpClient() {
             }
         }
 
-        postRequest(context, url, headers, dataJson.toString()) {
-            StorageProvider().setDeviceToken(context, token)
-        }
+        postRequest(context, url, headers, dataJson.toString(),
+            doResponse = {
+                StorageProvider().setDeviceToken(context, token)
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixSubscriptionCallback(NotixCallbackStatus.SUCCESS, it)
+                )
+            },
+            failResponse = {
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixSubscriptionCallback(NotixCallbackStatus.FAILED, it.message)
+                )
+            }
+        )
     }
 
     fun impression(context: Context, impressionData: String?) {
@@ -240,7 +295,7 @@ class ApiClient : BaseHttpClient() {
 
         val url = "$NOTIX_EVENTS_BASE_ROUTE/event"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val appId = StorageProvider().getAppId(context)
 
@@ -254,9 +309,19 @@ class ApiClient : BaseHttpClient() {
                 }
             }
 
-            postRequest(context, url, headers, dataJson.toString()) {
-                Log.d("NotixDebug", "impression tracked")
-            }
+            postRequest(context, url, headers, dataJson.toString(),
+                doResponse = {
+                    Log.d("NotixDebug", "impression tracked")
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixImpressionCallback(NotixCallbackStatus.SUCCESS, it)
+                    )
+                },
+                failResponse = {
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixImpressionCallback(NotixCallbackStatus.FAILED, it.message)
+                    )
+                }
+            )
         } catch (e: JSONException) {
             Log.d("NotixDebug", "invalid impression json: $impressionData, ${e.message}")
         }
@@ -270,7 +335,7 @@ class ApiClient : BaseHttpClient() {
 
         val url = "$NOTIX_EVENTS_BASE_ROUTE/ck"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val appId = StorageProvider().getAppId(context)
 
@@ -285,9 +350,19 @@ class ApiClient : BaseHttpClient() {
                 }
             }
 
-            postRequest(context, url, headers, dataJson.toString()) {
-                Log.d("NotixDebug", "click tracked")
-            }
+            postRequest(context, url, headers, dataJson.toString(),
+                doResponse = {
+                    Log.d("NotixDebug", "click tracked")
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixClickCallback(NotixCallbackStatus.SUCCESS, it)
+                    )
+                },
+                failResponse = {
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixClickCallback(NotixCallbackStatus.FAILED, it.message)
+                    )
+                }
+            )
         } catch (e: JSONException) {
             Log.d("NotixDebug", "invalid click json: $clickData, ${e.message}")
         }
@@ -302,7 +377,7 @@ class ApiClient : BaseHttpClient() {
 
         val url = "$NOTIX_API_BASE_ROUTE/refresh?app_id=$appId"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
         headers["Authorization-Token"] = authToken
 
         val pubId = StorageProvider().getPubId(context)
@@ -339,9 +414,19 @@ class ApiClient : BaseHttpClient() {
 
         Log.d("NotixDebug", "refresh: $dataJson")
 
-        postRequest(context, url, headers, dataJson.toString()) {
-            Log.d("NotixDebug", "version tracked")
-        }
+        postRequest(context, url, headers, dataJson.toString(),
+            doResponse = {
+                Log.d("NotixDebug", "version tracked")
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixRefreshDataCallback(NotixCallbackStatus.SUCCESS, it)
+                )
+            },
+            failResponse = {
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixRefreshDataCallback(NotixCallbackStatus.FAILED, it.message)
+                )
+            }
+        )
     }
 
     fun addAudience(context: Context, audience: String) {
@@ -396,7 +481,7 @@ class ApiClient : BaseHttpClient() {
 
         val url = "$NOTIX_API_BASE_ROUTE/android/audiences?app_id=$appId"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
         headers["Authorization-Token"] = authToken
 
         val dataJson = JSONObject().apply {
@@ -408,8 +493,18 @@ class ApiClient : BaseHttpClient() {
             put("package_name", packageName)
         }
 
-        postRequest(context, url, headers, dataJson.toString()) {
-            Log.d("NotixDebug", "audience managed")
-        }
+        postRequest(context, url, headers, dataJson.toString(),
+            doResponse = {
+                Log.d("NotixDebug", "audience managed")
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixManageAudienceCallback(NotixCallbackStatus.SUCCESS, it)
+                )
+            },
+            failResponse = {
+                NotixSDK.instance.statusCallback?.invoke(
+                    NotixManageAudienceCallback(NotixCallbackStatus.FAILED, it.message)
+                )
+            }
+        )
     }
 }

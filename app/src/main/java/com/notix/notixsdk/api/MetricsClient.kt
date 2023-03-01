@@ -2,17 +2,17 @@ package com.notix.notixsdk.api
 
 import android.content.Context
 import android.util.Log
-import com.notix.notixsdk.providers.StorageProvider
+import com.notix.notixsdk.NotixSDK
+import com.notix.notixsdk.domain.NotixCallbackStatus
+import com.notix.notixsdk.domain.NotixMetricsCallback
 import org.json.JSONException
 import org.json.JSONObject
 
 class MetricsClient : BaseHttpClient() {
-    private val storage = StorageProvider()
-
     fun trackGeneralMetric(context: Context) {
         val url = "${NOTIX_EVENTS_BASE_ROUTE}/metrics"
 
-        val headers = getMainHeaders()
+        val headers = getMainHeaders(context)
 
         val createdDate = storage.getCreatedDate(context)
 
@@ -47,15 +47,27 @@ class MetricsClient : BaseHttpClient() {
                 put("data", dataMetric)
             }
 
-            postRequest(context, url, headers, metricJson.toString()) {
-                storage.setLastRunVersion(context, currentVersion)
-
-                Log.d("NotixDebug", "metric general tracked")
-            }
+            postRequest(context, url, headers, metricJson.toString(),
+                doResponse = {
+                    storage.setLastRunVersion(context, currentVersion)
+                    Log.d("NotixDebug", "metric general tracked")
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixMetricsCallback(NotixCallbackStatus.SUCCESS, it)
+                    )
+                },
+                failResponse = {
+                    NotixSDK.instance.statusCallback?.invoke(
+                        NotixMetricsCallback(NotixCallbackStatus.FAILED, it.message)
+                    )
+                }
+            )
         } catch (e: JSONException) {
             Log.d(
                 "NotixDebug",
                 "track general metric failed: ${e.message}"
+            )
+            NotixSDK.instance.statusCallback?.invoke(
+                NotixMetricsCallback(NotixCallbackStatus.FAILED, e.message)
             )
         }
     }

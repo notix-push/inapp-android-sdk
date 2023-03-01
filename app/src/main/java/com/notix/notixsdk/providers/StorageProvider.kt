@@ -43,6 +43,8 @@ class StorageProvider {
         const val NOTIX_RUN_COUNT = "NOTIX_RUN_COUNT"
         const val NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED =
             "NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED"
+
+        const val NOTIX_CUSTOM_USER_AGENT = "NOTIX_CUSTOM_USER_AGENT"
     }
 
     @Synchronized
@@ -242,8 +244,16 @@ class StorageProvider {
         return getLong(context, NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID)
     }
 
-    fun setInterstitialDefaultZoneIdd(context: Context, zoneId: Long) {
+    fun setInterstitialDefaultZoneId(context: Context, zoneId: Long) {
         putLong(context, NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID, zoneId)
+    }
+
+    fun getCustomUserAgent(context: Context): String? {
+        return getString(context, NOTIX_CUSTOM_USER_AGENT)
+    }
+
+    fun setCustomUserAgent(context: Context, userAgent: String) {
+        putString(context, NOTIX_CUSTOM_USER_AGENT, userAgent)
     }
 
     private fun putString(context: Context, key: String, value: String) {

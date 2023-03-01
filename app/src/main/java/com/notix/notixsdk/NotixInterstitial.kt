@@ -59,7 +59,9 @@ class NotixInterstitial private constructor() {
         context: Context,
         zoneId: Long? = null,
         vars: DomainModels.RequestVars? = null,
-        onLoadCallback: () -> Unit
+        experiment: Int? = null,
+        onLoadCallback: () -> Unit,
+        onLoadFailedCallback: (() -> Unit)? = null,
     ) {
         if (zoneId != null && zoneId > 0) {
             storage.setInterstitialLastZoneId(context, zoneId)
@@ -75,7 +77,14 @@ class NotixInterstitial private constructor() {
             onLoadCallback()
         }
 
-        apiClient.getInterstitial(context, vars, zoneId, onLoadCallbackForShow)
+        apiClient.getInterstitial(
+            context,
+            vars,
+            zoneId,
+            experiment,
+            onLoadCallbackForShow,
+            onLoadFailedCallback
+        )
     }
 
     fun show(context: Context) {
