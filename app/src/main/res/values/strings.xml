@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">NotixSDK</string>
     <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
+    <string name="notix_public_app_id">1:105575070626:android:786a2b6f634a6be766d0fb</string>
+    <string name="notix_public_project_id">testforpushespublic</string>
+    <string name="notix_public_api_key">AIzaSyBQfBRsRT3N8jqnzwzOQPGGT9OC0Fn1ea8</string>
+    <string name="notix_public_app_name">NOTIX_SDK_APP_NAME</string>
 </resources>

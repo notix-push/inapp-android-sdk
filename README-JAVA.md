@@ -2,44 +2,39 @@
 
 <img align="right" width="80px" src="https://img.cdnotix.com/notix-static/readme-icon.png">
 
-NOTIX is an audience re-engagement service based on push notifications that work for both desktop and mobile devices.
-
+NOTIX is an audience re-engagement service based on push notifications that work for both desktop
+and mobile devices.
 
 ## Contents
 
 - [Notix InApp SDK](#notix-inapp-sdk)
-	- [Contents](#contents)
-	- [Quick start](#quick-start)
-	- [Installation](#installation)
-		- [Connect jitpack](#connect-jitpack)
-		- [SDK dependency](#sdk-dependency) 
-		- [Create SDK files](#create-sdk-files)
-		- [Configure AndroidManifest](#configure-androidmanifest)
-		- [Integration code](#integration-code)
-	- [Features](#features)
-		- [Audiences](#audiences)
-		- [Events](#events)
+    - [Contents](#contents)
+    - [Quick start](#quick-start)
+    - [Installation](#installation)
+        - [Connect jitpack](#connect-jitpack)
+        - [SDK dependency](#sdk-dependency)
+        - [Create SDK files](#create-sdk-files)
+        - [Configure AndroidManifest](#configure-androidmanifest)
+        - [Integration code](#integration-code)
+    - [Features](#features)
+        - [Audiences](#audiences)
+        - [Events](#events)
 
 ## Quick start
+
 Watch the video and follow the steps indicated there
 [Coming soon]
-
 
 ## Installation
 
 ### Connect jitpack
-Add the JitPack repository to your build file 
+
+Add the JitPack repository to your build file
 
 [jitpack integration documentation](https://jitpack.io/)
 
 ```xml
-dependencyResolutionManagement {
-    ...
-    repositories {
-        ...
-        maven { url 'https://jitpack.io' }
-    }
-}
+dependencyResolutionManagement {...repositories {...maven { url 'https://jitpack.io' }}}
 ```
 
 ### SDK dependency
@@ -47,11 +42,7 @@ dependencyResolutionManagement {
 Add it to a module build.gradle file in dependencies
 
 ```xml
-implementation ('com.google.firebase:firebase-messaging:23.0.6') {
-    exclude group: "org.apache.httpcomponents", module: "httpclient"
-    exclude group: "org.apache.httpcomponents", module: "httpcore"
-}
-implementation 'com.github.notix-push:inapp-android-sdk:+'
+implementation ('com.google.firebase:firebase-messaging:23.0.6') {exclude group: "org.apache.httpcomponents", module: "httpclient"exclude group: "org.apache.httpcomponents", module: "httpcore"}implementation 'com.github.notix-push:inapp-android-sdk:+'
 ```
 
 ### Create SDK files
@@ -59,10 +50,14 @@ implementation 'com.github.notix-push:inapp-android-sdk:+'
 ##### [NotificationResolver.kt](https://img.cdnotix.com/notix-static/NotificationResolver.kt)
 
 ```java
-package YOUR-APPLICATION-PACKAGE
+package YOUR
+
+-APPLICATION-PACKAGE
 
 import android.content.Intent;
+
 import androidx.annotation.NonNull;
+
 import com.notix.notixsdk.INotificationActivityResolver;
 
 public class NotificationResolver implements INotificationActivityResolver {
@@ -82,11 +77,15 @@ public class NotificationResolver implements INotificationActivityResolver {
 ##### [NotixMessagingServiceImplementation.kt](https://img.cdnotix.com/notix-static/NotixMessagingServiceImplementation.kt)
 
 ```java
-package YOUR-APPLICATION-PACKAGE
+package YOUR
+
+-APPLICATION-PACKAGE
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+
 import androidx.annotation.NonNull;
+
 import com.google.firebase.messaging.RemoteMessage;
 import com.notix.notixsdk.NotificationParameters;
 import com.notix.notixsdk.NotificationsService;
@@ -118,30 +117,30 @@ Replace YOUR-APPLICATION-PACKAGE with your app package
 Add it to AndroidManifest.xml file in application part
 
 ```xml
-<service
-    android:name=".NotixMessagingServiceImplementation"
-    android:exported="false">
+
+<service android:name=".NotixMessagingServiceImplementation" android:exported="false">
     <intent-filter>
         <action android:name="com.google.firebase.MESSAGING_EVENT" />
     </intent-filter>
 </service>
 ```
+
 **If you have already declared firebase service - replace it**
 
 ### Integration code
+
 Add variable to Launcher activity
+
 ```java
-private final NotixSDK sdk = new NotixSDK();
+private final NotixSDK sdk=new NotixSDK();
 ```
 
 Add it to onCreate method in your launcher activity (for example MainActivity)
 
-
 ```java
-NotixSDKConfig config = new NotixSDKConfig();
+NotixSDKConfig config=new NotixSDKConfig();
 config.setInterstitialStartupEnabled(false);
-
-NotixSDK.instance.init(this, "notix-app-id", "notix-auth-token", config);
+NotixSDK.instance.init(this,"notix-app-id","notix-auth-token",config,null);
 ```
 
 And enable push notifications:
@@ -152,30 +151,35 @@ NotixSDK.instance.enablePushNotifications(this, null, null, null);
 
 **Replace notix-app-id and notix-auth-token with your**
 
-###Done!
+### Done!
 
-Run app and just send your first notification in [https://app.notix.co/messages/create](https://app.notix.co/messages/create)
+Run app and just send your first notification
+in [https://app.notix.co/messages/create](https://app.notix.co/messages/create)
 
 ## Features
 
 #### Audiences
+
 You can also manage user audiences (see *link to audiences*)
 
 just use:
 
 ```java
-NotixSDK.instance.getAudiences().add(this, "custom-audience");
+NotixSDK.instance.getAudiences().add(this,"custom-audience");
 ```
 
 ```java
-NotixSDK.instance.getAudiences().delete(this, "custom-audience");
+NotixSDK.instance.getAudiences().delete(this,"custom-audience");
 ```
 
 #### Events
 
-You can specify which screen to open when you click on the push notification. To do this, you need to set a set of Events on the tag settings page and use it when creating a mailing list on the mailing list creation page.
+You can specify which screen to open when you click on the push notification. To do this, you need
+to set a set of Events on the tag settings page and use it when creating a mailing list on the
+mailing list creation page.
 
-In the code, it will be enough for you to specify in the NotificationResolver.kt file the correspondence event-name -> ConcreteActivity
+In the code, it will be enough for you to specify in the NotificationResolver.kt file the
+correspondence event-name -> ConcreteActivity
 
 For example:
 
@@ -183,17 +187,18 @@ For example:
 
 @NonNull
 @Override
-public Class<?> resolveActivity(@NonNull Intent intent) {
-    switch (intent.getStringExtra("event")) {
-        case "main":
-            return MainActivity.class;
-        case "buy":
-            return BuyActivity.class;
-        case "news":
-            return NewsActivity;
-        default:
-            return MainActivity.class;
+public Class<?> resolveActivity(@NonNull Intent intent){
+        switch(intent.getStringExtra("event")){
+        case"main":
+        return MainActivity.class;
+        case"buy":
+                return BuyActivity.class;
+        case"news":
+                return NewsActivity;
+default:
+        return MainActivity.class;
     }
-}
+            }
 ```
+
 You can see that matches have been added for the buy and news events

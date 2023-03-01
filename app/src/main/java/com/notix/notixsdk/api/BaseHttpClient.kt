@@ -7,6 +7,7 @@ import com.android.volley.Response
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.notix.notixsdk.providers.StorageProvider
 import java.util.*
 
 open class BaseHttpClient {
@@ -16,11 +17,20 @@ open class BaseHttpClient {
         const val NOTIX_BASE_ROUTE = "https://notix.io"
     }
 
-    protected fun getMainHeaders(): MutableMap<String, String> {
+    protected val storage = StorageProvider()
+
+    protected fun getMainHeaders(context: Context): MutableMap<String, String> {
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "application/json"
         headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
-        headers["User-Agent"] = System.getProperty("http.agent")!!
+
+        val customUserAgent = storage.getCustomUserAgent(context)
+
+        if (!customUserAgent.isNullOrEmpty()) {
+            headers["User-Agent"] = customUserAgent
+        } else {
+            headers["User-Agent"] = System.getProperty("http.agent")!!
+        }
 
         return headers
     }
@@ -60,8 +70,8 @@ open class BaseHttpClient {
         headers: MutableMap<String, String>,
         body: String,
         doResponse: (response: String) -> Unit,
-
-        ) {
+        failResponse: (error: VolleyError) -> Unit,
+    ) {
         val queue = Volley.newRequestQueue(context)
 
         val stringRequest: StringRequest = object : StringRequest(
@@ -72,6 +82,7 @@ open class BaseHttpClient {
             },
             Response.ErrorListener { error ->
                 Log.d("NotixDebug", "api client error")
+                failResponse(error)
             }
         ) {
             @Throws(AuthFailureError::class)
