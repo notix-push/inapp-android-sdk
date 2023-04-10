@@ -2,19 +2,29 @@ package com.notix.notixsdk
 
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.notix.notixsdk.providers.StorageProvider
-import com.notix.notixsdk.api.ApiClient
-import com.notix.notixsdk.utils.permissionsAllowed
+import com.notix.notixsdk.di.SingletonComponent
+import com.notix.notixsdk.log.Logger
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 open class NotixFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var intent: Intent
+    private val notificationsPermissionController =
+        SingletonComponent.notificationsPermissionController
+    private val reporter = SingletonComponent.eventReporter
+    private val contextProviderInitializer = SingletonComponent.contextProviderInitializer
+    private val csIo = SingletonComponent.csProvider.provideSupervisedIo()
+    private val updateSubscriptionStateUseCase = SingletonComponent.updateSubscriptionStateUseCase
+
+    override fun onCreate() {
+        super.onCreate()
+        contextProviderInitializer.tryInit(applicationContext)
+    }
+
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-
         val event: String = getValueFromData(message.data, "event", "main")
         val title: String = getValueFromData(message.data, "title", "")
         val text: String = getValueFromData(message.data, "text", "")
@@ -25,7 +35,7 @@ open class NotixFirebaseMessagingService : FirebaseMessagingService() {
         val imageUrl: String = getValueFromData(message.data, "image_url", "")
         val pingData: String = getValueFromData(message.data, "pd", "")
 
-        Log.d("NotixDebug", "Message received event=$event title=$title text=$text")
+        Logger.i("Message received event=$event title=$title text=$text")
 
         intent = Intent("NOTIX_NOTIFICATION_INTENT")
 
@@ -42,16 +52,14 @@ open class NotixFirebaseMessagingService : FirebaseMessagingService() {
         intent.putExtra("image_url", imageUrl)
         intent.putExtra("pd", pingData)
 
-        if (!permissionsAllowed(this)) {
+        if (!notificationsPermissionController.updateAndGetCanPostNotifications()) {
             return
         }
 
         if (pingData.isEmpty() || JSONObject(pingData).length() == 0) {
-            ApiClient().impression(this, impressionData)
+            reporter.reportImpression(impressionData)
         }
     }
-
-    private var apiClient: ApiClient = ApiClient()
 
     private fun getValueFromData(data: Map<String, String>, key: String, default: String): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -64,25 +72,8 @@ open class NotixFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
 
-        val availableToken = StorageProvider().getDeviceToken(this)
-
-        if (availableToken != null && availableToken == token) {
-            return
-        }
-
-        Log.d("NotixDebug", "New token received $token")
-
-        val appId = StorageProvider().getAppId(this)
-        val uuid = StorageProvider().getUUID(this)
-        val packageName = StorageProvider().getPackageName(this)
-
-        if (appId != null && packageName != null) {
-            apiClient.subscribe(this, appId, uuid, packageName, token)
-        } else {
-            Log.d(
-                "NotixDebug",
-                "invalid subscribe data (appId: $appId, uuid: $uuid, packageName: $packageName)"
-            )
+        csIo.launch {
+            updateSubscriptionStateUseCase()
         }
     }
 }

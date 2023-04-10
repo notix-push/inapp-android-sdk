@@ -1,14 +1,16 @@
 package com.notix.notixsdk
 
 import android.content.Context
-import android.util.Log
-import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.di.SingletonComponent
 import com.notix.notixsdk.domain.DomainModels
+import com.notix.notixsdk.interstitial.data.AdType
+import com.notix.notixsdk.log.Logger
 import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
+import java.io.Serializable
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.Serializable
 
 data class ContentData(
     val title: String,
@@ -21,8 +23,11 @@ data class ContentData(
     val clickData: String,
 ) : Serializable
 
+// used by client app
 class NotixContentWrapper {
-    private val apiClient = ApiClient()
+    private val interstitialRepository = SingletonComponent.interstitialRepository
+    private val eventReporter = SingletonComponent.eventReporter
+    private val cs = SingletonComponent.csProvider.provideSupervisedIo()
     private val storage = StorageProvider()
 
     @Volatile
@@ -39,24 +44,24 @@ class NotixContentWrapper {
         onLoadCallback: () -> Unit,
         onLoadFailedCallback: (() -> Unit)? = null,
     ) {
-        val onLoadCallbackForContent = {
-            val messageContent = getInterstitialPayload(context)
-            if (messageContent != null) {
-                isInit = true
-                content = messageContent
-            }
-            onLoadCallback()
-        }
-
         isInit = false
-        apiClient.getMessageContent(
-            context,
-            vars,
-            zoneId,
-            experiment,
-            onLoadCallbackForContent,
-            onLoadFailedCallback
-        )
+        cs.launch {
+            interstitialRepository.getInterstitial(
+                adType = AdType.CONTENT,
+                zoneId = zoneId,
+                vars = vars,
+                experiment = experiment,
+                onLoadCallback = {
+                    val messageContent = getInterstitialPayload()
+                    if (messageContent != null) {
+                        isInit = true
+                        content = messageContent
+                    }
+                    onLoadCallback()
+                },
+                onLoadFailedCallback = onLoadFailedCallback
+            )
+        }
     }
 
     fun getMessageContent(): ContentData? = content
@@ -64,8 +69,10 @@ class NotixContentWrapper {
     fun trackImpression(context: Context) {
         if (!isInit) return
         content?.impressionData?.let { data ->
-            apiClient.impression(context, data)
-        } ?: Log.d("NotixDebug", "message content impression not tracked")
+            cs.launch {
+                eventReporter.reportImpression(data)
+            }
+        } ?: Logger.i("message content impression not tracked")
     }
 
     /*
@@ -75,12 +82,12 @@ class NotixContentWrapper {
     fun trackClick(context: Context) {
         if (!isInit) return
         content?.clickData?.let { data ->
-            apiClient.click(context, data)
-        } ?: Log.d("NotixDebug", "message content click not tracked")
+            cs.launch { eventReporter.reportClick(data) }
+        } ?: Logger.i("message content click not tracked")
     }
 
-    private fun getInterstitialPayload(context: Context): ContentData? {
-        val messageContentSource = storage.getMessageContentPayload(context)
+    private fun getInterstitialPayload(): ContentData? {
+        val messageContentSource = storage.getMessageContentPayload()
         val dataJson = JSONArray(messageContentSource)
         val messageContentDtos = parsePayloadJson(dataJson)
 
@@ -94,7 +101,7 @@ class NotixContentWrapper {
             val item: JSONObject = dataJson.getJSONObject(i)
 
             if (!validateMessagePayloadData(item)) {
-                Log.d("NotixDebug", "Message payload item invalid. $item")
+                Logger.i("Message payload item invalid. $item")
                 continue
             }
 

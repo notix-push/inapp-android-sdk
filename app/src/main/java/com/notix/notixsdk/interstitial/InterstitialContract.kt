@@ -2,7 +2,7 @@ package com.notix.notixsdk.interstitial
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import com.notix.notixsdk.log.Logger
 
 class InterstitialContract {
 
@@ -14,9 +14,7 @@ class InterstitialContract {
 
         fun createIntent(context: Context, input: InterstitialData?) =
             Intent(context, InterstitialActivity::class.java)
-                .also {
-                    Log.i("NotixDebug", "data before put: $input")
-                }
+                .also { Logger.v("data before put: $input") }
                 .apply { putExtra(InterstitialActivity.DATA, input) }
 
         fun parseResult(resultCode: Int, intent: Intent?) = when (resultCode) {

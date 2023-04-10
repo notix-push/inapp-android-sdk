@@ -1,16 +1,17 @@
 package com.notix.notixsdk.providers
 
-import android.content.Context
-import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.di.SingletonComponent
+import kotlinx.coroutines.launch
 
 class NotixAudienceProvider {
-    private val apiClient = ApiClient()
+    private val mainRepository = SingletonComponent.mainRepository
+    private val csIo = SingletonComponent.csProvider.provideSupervisedIo()
 
-    fun add(context: Context, audience: String) {
-        apiClient.addAudience(context, audience)
+    fun add(audience: String) = csIo.launch {
+        mainRepository.manageAudience("add", audience)
     }
 
-    fun delete(context: Context, audience: String) {
-        apiClient.deleteAudience(context, audience)
+    fun delete(audience: String) = csIo.launch {
+        mainRepository.manageAudience("delete", audience)
     }
 }

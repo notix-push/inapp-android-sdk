@@ -15,30 +15,36 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.di.SingletonComponent
+import com.notix.notixsdk.domain.NotixCallback
+import com.notix.notixsdk.domain.NotixCallbackStatus
+import com.notix.notixsdk.log.Logger
 import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
-import com.notix.notixsdk.utils.permissionsAllowed
-import org.json.JSONArray
-import org.json.JSONObject
 import java.net.URL
 import kotlin.random.Random
+import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 
 
 @Suppress("unused")
 class NotificationsService {
-    private val apiClient = ApiClient()
     private val storage = StorageProvider()
+    private val notificationsPermissionController =
+        SingletonComponent.notificationsPermissionController
+    private val pushDataSource = SingletonComponent.pushDataSource
+    private val csIo = SingletonComponent.csProvider.provideSupervisedIo()
+    private val notixCallbackReporter = SingletonComponent.notixCallbackReporter
 
     fun handleNotification(
         context: Context,
         resolver: INotificationActivityResolver,
         intent: Intent
     ) {
-        if (!permissionsAllowed(context)) {
+        if (!notificationsPermissionController.updateAndGetCanPostNotifications()) {
             return
         }
 
@@ -52,7 +58,7 @@ class NotificationsService {
         intent: Intent,
         notificationParameters: NotificationParameters
     ) {
-        if (!permissionsAllowed(context)) {
+        if (!notificationsPermissionController.updateAndGetCanPostNotifications()) {
             return
         }
 
@@ -107,10 +113,7 @@ class NotificationsService {
             try {
                 showNotification(context, activity, intent, notificationParameters)
             } catch (e: Exception) {
-                Log.d(
-                    "NotixDebug",
-                    "Show notification thread crash: ${e.message ?: "[exception message null]"}"
-                )
+                Logger.i("Show notification thread crash: ${e.message ?: "[exception message null]"}")
                 e.printStackTrace()
             }
         }
@@ -120,17 +123,28 @@ class NotificationsService {
             return
         }
 
-        fun callback(response: String) {
+        csIo.launch {
+            val response = runCatching { pushDataSource.getPushData(pingData) }
+                .onSuccess {
+                    notixCallbackReporter.report(
+                        NotixCallback.PushDataLoad(NotixCallbackStatus.SUCCESS, it)
+                    )
+                }
+                .onFailure {
+                    Logger.e(msg = "couldn't get push data pingData = $pingData", throwable = it)
+                    notixCallbackReporter.report(
+                        NotixCallback.PushDataLoad(NotixCallbackStatus.FAILED, it.message)
+                    )
+                }.getOrNull() ?: return@launch
             fillMessage(intent, response)
             showNotificationThread.start()
-            apiClient.impression(context, intent.getStringExtra("impression_data"))
+            intent.getStringExtra("impression_data")
+                ?.let { SingletonComponent.eventReporter.reportImpression(it) }
         }
-
-        apiClient.getPushData(context, pingData, ::callback)
     }
 
     private fun fillMessage(intent: Intent, response: String) {
-        Log.d("NotixDebug", "Message filled: $response")
+        Logger.i("Message filled: $response")
         val dataJsonArray = JSONArray(response)
 
         for (i in 0 until dataJsonArray.length()) {
@@ -194,10 +208,10 @@ class NotificationsService {
         intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
 
         val pendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, Random.nextInt(Int.MAX_VALUE), rootIntent, PendingIntent.FLAG_IMMUTABLE)
         } else {
             // TODO NEED CHECK WORK FLAG_ONE_SHOT
-            PendingIntent.getActivity(context, 0, rootIntent, PendingIntent.FLAG_ONE_SHOT)
+            PendingIntent.getActivity(context, Random.nextInt(Int.MAX_VALUE), rootIntent, PendingIntent.FLAG_ONE_SHOT)
         }
 
         val icon: Bitmap? = loadImg(iconUrl)
@@ -261,10 +275,7 @@ class NotificationsService {
                 val url = URL(imgUrl)
                 return BitmapFactory.decodeStream(url.openConnection().getInputStream())
             } catch (e: Exception) {
-                Log.d(
-                    "NotixDebug",
-                    "Failed receive image by url: $imgUrl , have ex: ${e.message} "
-                )
+                Logger.i("Failed receive image by url: $imgUrl , have ex: ${e.message} ")
             }
         }
 
