@@ -2,12 +2,19 @@ package com.notix.notixsdk.providers
 
 import android.app.Service
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.text.format.DateFormat
+import androidx.core.content.edit
+import com.notix.notixsdk.di.SingletonComponent
 import com.notix.notixsdk.domain.DomainModels
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 class StorageProvider {
+    private val context
+        get() = SingletonComponent.contextProvider.appContext
+
     companion object {
         const val NOTIX_PREF_STORAGE = "NOTIX_PREF_STORAGE"
 
@@ -18,7 +25,7 @@ class StorageProvider {
         const val NOTIX_AUTH_TOKEN = "NOTIX_AUTH_TOKEN"
         const val NOTIX_PUB_ID = "NOTIX_PUB_ID"
         const val NOTIX_DEVICE_TOKEN = "NOTIX_DEVICE_TOKEN"
-        const val NOTIX_PACKAGE_NAME = "NOTIX_PACKAGE_NAME"
+        const val NOTIX_IS_SUBSCRIPTION_ACTIVE = "NOTIX_IS_SUBSCRIPTION_ACTIVE"
         const val NOTIX_INTERSTITIAL_PAYLOAD = "NOTIX_INTERSTITIAL_PAYLOAD"
         const val NOTIX_MESSAGE_CONTENT_DATA = "NOTIX_MESSAGE_CONTENT_DATA"
 
@@ -41,14 +48,12 @@ class StorageProvider {
 
         const val NOTIX_LAST_RUN_VERSION = "NOTIX_LAST_RUN_VERSION"
         const val NOTIX_RUN_COUNT = "NOTIX_RUN_COUNT"
-        const val NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED =
-            "NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED"
 
         const val NOTIX_CUSTOM_USER_AGENT = "NOTIX_CUSTOM_USER_AGENT"
     }
 
     @Synchronized
-    fun getUUID(context: Context): String {
+    fun getUUID(): String {
         var uniqueID = getString(context, NOTIX_UNIQUE_ID)
 
         if (uniqueID == null) {
@@ -57,13 +62,13 @@ class StorageProvider {
         }
 
         //TODO try make CreatedDate
-        getCreatedDate(context)
+        getCreatedDate()
 
         return uniqueID
     }
 
     @Synchronized
-    fun getCreatedDate(context: Context): String {
+    fun getCreatedDate(): String {
         var createdDate = getString(context, NOTIX_CREATED_DATE)
 
         if (createdDate == null) {
@@ -74,39 +79,31 @@ class StorageProvider {
         return createdDate
     }
 
-    fun getSenderId(context: Context): Long {
+    fun getSenderId(): Long {
         return getLong(context, NOTIX_REMOTE_SENDER_ID)
     }
 
-    fun setSenderId(context: Context, senderId: Long) {
+    fun setSenderId(senderId: Long) {
         putLong(context, NOTIX_REMOTE_SENDER_ID, senderId)
     }
 
-    fun getNotificationsPermissionsAllowed(context: Context): Boolean {
-        return getBoolean(context, NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED)
-    }
-
-    fun setNotificationsPermissionsAllowed(context: Context, allowed: Boolean) {
-        putBoolean(context, NOTIX_NOTIFICATIONS_PERMISSIONS_ALLOWED, allowed)
-    }
-
-    fun getLastRunVersion(context: Context): String? {
+    fun getLastRunVersion(): String? {
         return getString(context, NOTIX_LAST_RUN_VERSION)
     }
 
-    fun setLastRunVersion(context: Context, lastRunVersion: String) {
+    fun setLastRunVersion(lastRunVersion: String) {
         putString(context, NOTIX_LAST_RUN_VERSION, lastRunVersion)
     }
 
-    fun getRunCount(context: Context): Long? {
+    fun getRunCount(): Long? {
         return getLong(context, NOTIX_RUN_COUNT)
     }
 
-    fun setRunCount(context: Context, runCount: Long) {
+    fun setRunCount(runCount: Long) {
         putLong(context, NOTIX_RUN_COUNT, runCount)
     }
 
-    fun getPushVars(context: Context): DomainModels.RequestVars {
+    fun getPushVars(): DomainModels.RequestVars {
         val var1 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_1) ?: ""
         val var2 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_2) ?: ""
         val var3 = getString(context, NOTIX_SUBSCRIBE_REQUEST_VAR_3) ?: ""
@@ -168,59 +165,57 @@ class StorageProvider {
         }
     }
 
-    fun getAppId(context: Context): String? {
+    fun getAppId(): String? {
         return getString(context, NOTIX_APP_ID)
     }
 
-    fun setAppId(context: Context, appId: String) {
+    fun setAppId(appId: String) {
         putString(context, NOTIX_APP_ID, appId)
     }
 
-    fun getAuthToken(context: Context): String? {
+    fun getAuthToken(): String? {
         return getString(context, NOTIX_AUTH_TOKEN)
     }
 
-    fun setAuthToken(context: Context, authToken: String) {
+    fun setAuthToken(authToken: String) {
         putString(context, NOTIX_AUTH_TOKEN, authToken)
     }
 
-    fun getPubId(context: Context): Int {
+    fun getPubId(): Int? {
         return getInt(context, NOTIX_PUB_ID)
     }
 
-    fun setPubId(context: Context, pubId: Int) {
+    fun setPubId(pubId: Int) {
         putInt(context, NOTIX_PUB_ID, pubId)
     }
 
-    fun getDeviceToken(context: Context): String? {
+    fun getFcmToken(): String? {
         return getString(context, NOTIX_DEVICE_TOKEN)
     }
 
-    fun setDeviceToken(context: Context, appId: String) {
+    fun setFcmToken(appId: String) {
         putString(context, NOTIX_DEVICE_TOKEN, appId)
     }
 
-    fun getPackageName(context: Context): String? {
-        return getString(context, NOTIX_PACKAGE_NAME)
-    }
+    fun removeFcmToken() = removeByKey(NOTIX_DEVICE_TOKEN)
 
-    fun setPackageName(context: Context, packageName: String) {
-        putString(context, NOTIX_PACKAGE_NAME, packageName)
-    }
+    fun isSubscriptionActive() = getBoolean(context, NOTIX_IS_SUBSCRIPTION_ACTIVE)
+    fun setSubscriptionActive(newValue: Boolean) =
+        putBoolean(context, NOTIX_IS_SUBSCRIPTION_ACTIVE, newValue)
 
     fun getInterstitialPayload(context: Context): String? {
         return getString(context, NOTIX_INTERSTITIAL_PAYLOAD)
     }
 
-    fun setInterstitialPayload(context: Context, interstitialPayload: String) {
+    fun setInterstitialPayload(interstitialPayload: String) {
         putString(context, NOTIX_INTERSTITIAL_PAYLOAD, interstitialPayload)
     }
 
-    fun getMessageContentPayload(context: Context): String? {
+    fun getMessageContentPayload(): String? {
         return getString(context, NOTIX_MESSAGE_CONTENT_DATA)
     }
 
-    fun setMessageContentPayload(context: Context, messageContentPayload: String) {
+    fun setMessageContentPayload(messageContentPayload: String) {
         putString(context, NOTIX_MESSAGE_CONTENT_DATA, messageContentPayload)
     }
 
@@ -248,7 +243,7 @@ class StorageProvider {
         putLong(context, NOTIX_INTERSTITIAL_DEFAULT_ZONE_ID, zoneId)
     }
 
-    fun getCustomUserAgent(context: Context): String? {
+    fun getCustomUserAgent(): String? {
         return getString(context, NOTIX_CUSTOM_USER_AGENT)
     }
 
@@ -283,11 +278,11 @@ class StorageProvider {
         editor.apply()
     }
 
-    private fun getInt(context: Context, key: String): Int {
+    private fun getInt(context: Context, key: String): Int? {
         val sharedPrefs = context.getSharedPreferences(
             NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
         )
-        return sharedPrefs.getInt(key, 0)
+        return sharedPrefs.getInt(key, INT_NULL).let { if (it == INT_NULL) null else it }
     }
 
     private fun putLong(context: Context, key: String, value: Long) {
@@ -331,6 +326,9 @@ class StorageProvider {
         sharedPrefs.edit().remove(NOTIX_INTERSTITIAL_PAYLOAD).apply()
     }
 
+    fun removeByKey(key: String) =
+        context.getSharedPreferences(NOTIX_PREF_STORAGE, MODE_PRIVATE).edit { remove(key) }
+
     fun clearStorage(context: Context) {
         val sharedPrefs = context.getSharedPreferences(
             NOTIX_PREF_STORAGE, Service.MODE_PRIVATE
@@ -338,3 +336,5 @@ class StorageProvider {
         sharedPrefs.edit().clear().apply();
     }
 }
+
+private const val INT_NULL = Int.MIN_VALUE / 2 + 11

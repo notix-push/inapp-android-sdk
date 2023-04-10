@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.notix.notixsdk", appContext.packageName)
+        assertEquals("com.notix.notixsdk.test", appContext.packageName)
     }
 }

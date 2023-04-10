@@ -5,7 +5,7 @@ import androidx.work.*
 import com.notix.notixsdk.interstitial.ClosingSettings
 import com.notix.notixsdk.interstitial.InterstitialButton
 import com.notix.notixsdk.providers.StorageProvider
-import com.notix.notixsdk.workers.InterstitialStartupWorker
+import com.notix.notixsdk.interstitial.InterstitialStartupWorker
 
 class StartupService {
 
@@ -83,6 +83,5 @@ class StartupService {
                 ExistingWorkPolicy.REPLACE,
                 interstitialWorkRequest
             )
-
     }
 }

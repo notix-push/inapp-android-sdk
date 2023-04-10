@@ -1,4 +1,4 @@
-package com.notix.notixsdk.api
+package com.notix.notixsdk.data
 
 class RequestModels {
     data class ConfigModel (

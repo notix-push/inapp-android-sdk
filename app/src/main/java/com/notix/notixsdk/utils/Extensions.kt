@@ -2,13 +2,17 @@ package com.notix.notixsdk.utils
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import androidx.browser.customtabs.CustomTabsService
+import org.json.JSONArray
 import org.json.JSONObject
 
 internal fun Context.getBrowserIntentPackages(): List<ResolveInfo> {
@@ -21,8 +25,6 @@ internal fun Context.getBrowserIntentPackages(): List<ResolveInfo> {
     // Get all apps that can handle VIEW intents.
     return packageManager.queryIntentActivities(activityIntent, 0)
 }
-
-internal fun Context.canHandleBrowserIntent() = getBrowserIntentPackages().isNotEmpty()
 
 internal fun Context.hasCustomTabsBrowser(): Boolean {
     val resolvedActivityList = getBrowserIntentPackages()
@@ -38,9 +40,6 @@ internal fun Context.hasCustomTabsBrowser(): Boolean {
     }
     return packagesSupportingCustomTabs.isNotEmpty()
 }
-
-internal inline fun <reified T> JSONObject.getOrFallback(name: String, fallback: T): T =
-    if (this.has(name)) (this.get(name) as? T) ?: fallback else fallback
 
 /// from androidx
 fun Drawable.toBitmap(
@@ -71,3 +70,14 @@ fun Drawable.toBitmap(
     setBounds(oldLeft, oldTop, oldRight, oldBottom)
     return bitmap
 }
+
+internal fun Context.getTargetSdkVersion() = runCatching {
+    packageManager.getApplicationInfo(packageName, 0).targetSdkVersion
+}.getOrDefault(Build.VERSION_CODES.KITKAT)
+
+fun PackageManager.getPackageInfoCompat(packageName: String, flags: Int = 0): PackageInfo =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(flags.toLong()))
+    } else {
+        @Suppress("DEPRECATION") getPackageInfo(packageName, flags)
+    }

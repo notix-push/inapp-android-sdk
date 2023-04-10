@@ -1,13 +1,11 @@
-package com.notix.notixsdk.workers
+package com.notix.notixsdk.interstitial
 
 import android.content.Context
-import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.notix.notixsdk.NotixInterstitial
 import com.notix.notixsdk.domain.DomainModels
-import com.notix.notixsdk.interstitial.ClosingSettings
-import com.notix.notixsdk.interstitial.InterstitialButton
+import com.notix.notixsdk.log.Logger
 import com.notix.notixsdk.providers.StorageProvider
 
 class InterstitialStartupWorker(context: Context, workerParameters: WorkerParameters) :
@@ -34,7 +32,7 @@ class InterstitialStartupWorker(context: Context, workerParameters: WorkerParame
     }
 
     override fun doWork(): Result {
-        Log.d("NotixDebug", "Interstitial startup worker run")
+        Logger.i("Interstitial startup worker run")
 
         val buttonText = inputData.getString(NOTIX_WORKER_BUTTON_TEXT) ?: "OPEN"
         val buttonTextColor = inputData.getString(NOTIX_WORKER_BUTTON_TEXT_COLOR) ?: "#ffffff"

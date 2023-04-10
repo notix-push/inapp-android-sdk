@@ -2,20 +2,27 @@ package com.notix.notixsdk
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
-import com.notix.notixsdk.api.ApiClient
+import com.notix.notixsdk.di.SingletonComponent
 import com.notix.notixsdk.domain.DomainModels
-import com.notix.notixsdk.interstitial.*
+import com.notix.notixsdk.interstitial.ClosingSettings
+import com.notix.notixsdk.interstitial.InterstitialButton
+import com.notix.notixsdk.interstitial.InterstitialContract
+import com.notix.notixsdk.interstitial.InterstitialData
+import com.notix.notixsdk.interstitial.InterstitialProvider
+import com.notix.notixsdk.interstitial.data.AdType
+import com.notix.notixsdk.log.Logger
 import com.notix.notixsdk.providers.StorageProvider
 import com.notix.notixsdk.utils.getOrFallback
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
 class NotixInterstitial private constructor() {
 
+    private val interstitialRepository = SingletonComponent.interstitialRepository
     private var provider: InterstitialProvider? = null
-    private val apiClient = ApiClient()
     private val storage = StorageProvider()
+    private val csIo = SingletonComponent.csProvider.provideSupervisedIo()
 
     @Volatile
     private var isLoaded = false
@@ -39,7 +46,7 @@ class NotixInterstitial private constructor() {
         closingSettings: ClosingSettings?,
     ) {
         if (!NotixSDK.instance.hasInitialized()) {
-            Log.d("NotixDebug", "Notix SDK was not initialized")
+            Logger.i("Notix SDK was not initialized")
             return
         }
 
@@ -69,22 +76,22 @@ class NotixInterstitial private constructor() {
 
         isLoaded = false
 
-        val onLoadCallbackForShow = {
-            isLoaded = true
-            if (showWaitLoad) {
-                show(context)
-            }
-            onLoadCallback()
+        csIo.launch {
+            interstitialRepository.getInterstitial(
+                adType = AdType.INTERSTITIAL,
+                zoneId = zoneId,
+                vars = vars,
+                experiment = experiment,
+                onLoadCallback = {
+                    isLoaded = true
+                    if (showWaitLoad) {
+                        show(context)
+                    }
+                    onLoadCallback()
+                },
+                onLoadFailedCallback = onLoadFailedCallback
+            )
         }
-
-        apiClient.getInterstitial(
-            context,
-            vars,
-            zoneId,
-            experiment,
-            onLoadCallbackForShow,
-            onLoadFailedCallback
-        )
     }
 
     fun show(context: Context) {
@@ -101,7 +108,7 @@ class NotixInterstitial private constructor() {
             }
 
         if (data != null) {
-            Log.i("NotixDebug", "data before put: $data")
+            Logger.v("data before put: $data")
             provider?.showInterstitial(context, data)
             showWaitLoad = false
         }
@@ -138,7 +145,7 @@ class NotixInterstitial private constructor() {
             val item: JSONObject = dataJson.getJSONObject(i)
 
             if (!validateInterstitialData(item)) {
-                Log.d("NotixDebug", "Interstitial item invalid. $item")
+                Logger.i("Interstitial item invalid. $item")
                 continue
             }
 

@@ -1,25 +1,20 @@
 package com.notix.notixsdk.services
 
-import android.content.Context
+import com.notix.notixsdk.di.SingletonComponent
 import com.notix.notixsdk.providers.StorageProvider
-import com.notix.notixsdk.api.MetricsClient
+import kotlinx.coroutines.launch
 
 class MetricsService {
-    private val client = MetricsClient()
     private val storage = StorageProvider()
+    private val metricsRepository = SingletonComponent.metricsRepository
+    private val csIo = SingletonComponent.csProvider.provideSupervisedIo()
 
-    fun doGeneralMetric(context: Context) {
-        client.trackGeneralMetric(context)
-    }
-
-    fun incrementRunCount(context: Context) {
-        var currentValue = storage.getRunCount(context)
-        if (currentValue == null) {
-            currentValue = 1
-        } else {
-            currentValue += 1
+    fun onLaunch() = csIo.launch {
+        val runCount = (storage.getRunCount() ?: 0) + 1
+        storage.setRunCount(runCount)
+        if (runCount == 1L) {
+            metricsRepository.sendAppInstall()
         }
-
-        storage.setRunCount(context, currentValue)
+        metricsRepository.sendGeneralMetrics()
     }
 }

@@ -7,8 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -18,7 +16,6 @@ import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
-import android.util.Log
 import android.view.View
 import android.view.WindowInsets
 import android.widget.FrameLayout
@@ -26,12 +23,17 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.browser.customtabs.CustomTabsIntent
 import com.notix.notixsdk.R
-import com.notix.notixsdk.api.ApiClient
-import com.notix.notixsdk.utils.*
+import com.notix.notixsdk.di.SingletonComponent
+import com.notix.notixsdk.log.Logger
+import com.notix.notixsdk.utils.ColorPairsGenerator
+import com.notix.notixsdk.utils.Colors
+import com.notix.notixsdk.utils.dp
+import com.notix.notixsdk.utils.hasCustomTabsBrowser
 import java.lang.ref.WeakReference
 import java.net.URL
 
 internal class InterstitialActivity : Activity() {
+    private val reporter = SingletonComponent.eventReporter
 
     companion object {
         const val DATA = "INTERSTITIAL_DATA"
@@ -45,8 +47,6 @@ internal class InterstitialActivity : Activity() {
     private val closeButton: View by lazy { findViewById(R.id.interstitial_close) }
     private val progressView: View by lazy { findViewById(R.id.interstitial_progress) }
 
-    private val apiClient = ApiClient()
-
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -55,11 +55,14 @@ internal class InterstitialActivity : Activity() {
 
         val data = intent.getSerializableExtra(DATA) as? InterstitialData
         if (data == null) {
-            Log.i("NotixDebug", "data null: $data")
+            Logger.v("data null: $data")
             closeInterstitial(InterstitialContract.RESULT_ERROR)
             return
         }
-        composeInterstitial(data)
+        composeInterstitial(
+            data = data,
+            onImageLoadError = { closeInterstitial(InterstitialContract.RESULT_ERROR) }
+        )
     }
 
     private fun prepareActivity() {
@@ -100,39 +103,38 @@ internal class InterstitialActivity : Activity() {
         closeButton.layoutParams = layoutParams
     }
 
-    private fun composeInterstitial(data: InterstitialData) {
-        loadImage(data.imageUrl) {
-            runOnUiThread {
-                it?.let { drawable ->
+    private fun composeInterstitial(data: InterstitialData, onImageLoadError: () -> Unit) {
+        loadImage(
+            url = data.imageUrl,
+            onResult = { bitmap ->
+                runOnUiThread {
                     progressView.visibility = View.INVISIBLE
-                    image.setImageDrawable(drawable)
-                    setBlurredBackground(drawable)
+                    image.setImageBitmap(bitmap)
+                    setBlurredBackground(bitmap)
+                    configureControls(data, bitmap)
                 }
-                configureControls(data, it)
-            }
-            apiClient.impression(this, data.impressionData)
+                reporter.reportImpression(data.impressionData)
+            },
+            onError = { onImageLoadError() }
+        )
+    }
+
+    private fun loadImage(
+        url: String,
+        onResult: (bitmap: Bitmap) -> Unit,
+        onError: (message: String?) -> Unit
+    ) = Thread {
+        try {
+            onResult(URL(url).openStream().use { BitmapFactory.decodeStream(it) })
+        } catch (e: Throwable) {
+            Logger.v("loadImage error: $e")
+            onError(e.message)
         }
-    }
+    }.start()
 
-    private fun loadImage(url: String, onResult: (Drawable?) -> Unit) {
-        Thread {
-            try {
-                val uriStream = URL(url).openStream()
-                val bmp = BitmapFactory.decodeStream(uriStream)
 
-                onResult(BitmapDrawable(resources, bmp))
-            } catch (e: Throwable) {
-
-                Log.i("NotixDebug", "loadImage error: $e")
-                onResult(null)
-            }
-        }.start()
-    }
-
-    private fun setBlurredBackground(image: Drawable?) {
-        if (image == null) return
-
-        background.setImageBitmap(blur(this, image.toBitmap()))
+    private fun setBlurredBackground(bitmap: Bitmap) {
+        background.setImageBitmap(blur(this, bitmap))
     }
 
 
@@ -179,8 +181,8 @@ internal class InterstitialActivity : Activity() {
         return output
     }
 
-    private fun configureControls(data: InterstitialData, drawable: Drawable?) {
-        ColorPairsGenerator.generate(this, drawable) { colors ->
+    private fun configureControls(data: InterstitialData, bitmap: Bitmap) {
+        ColorPairsGenerator.generate(this, bitmap) { colors ->
             // use primary color for button if it exists for text, otherwise
             val textColors = if (data.buttons.isNotEmpty()) {
                 colors.getOrNull(1) ?: colors.first()
@@ -290,8 +292,8 @@ internal class InterstitialActivity : Activity() {
 
     private fun navigateToUrl(url: String, isExternal: Boolean) {
         when {
-            url.isBlank() -> Log.d("NotixDebug", "Target url is empty")
-            !url.contains("http") -> Log.d("NotixDebug", "Target url must contains http")
+            url.isBlank() -> Logger.i("Target url is empty")
+            !url.contains("http") -> Logger.i("Target url must contains http")
             else -> {
                 val uri = Uri.parse(url)
                 if (isExternal) {
@@ -304,12 +306,22 @@ internal class InterstitialActivity : Activity() {
     }
 
     private fun openBrowser(uri: Uri) {
-        if (canHandleBrowserIntent()) {
-            Intent(Intent.ACTION_VIEW, uri)
-                .also { intent -> startActivity(intent) }
-        } else {
-            Log.d("NotixDebug", "Android device does not support Web browsing")
-        }
+        runCatching {
+            // can throw ActivityNotFoundException
+            // and SecurityException in case if the default handler activity has flag exported=false
+            // https://groups.google.com/g/google-admob-ads-sdk/c/Zma4IWrEw8U
+            Intent(Intent.ACTION_VIEW, uri).also { intent -> startActivity(intent) }
+        }.fold(
+            onSuccess = {
+                Logger.i("successfully started activity with uri: $uri")
+            },
+            onFailure = {
+                Logger.e(
+                    msg = "couldn't start activity with uri=$uri, error=${it.message}",
+                    throwable = it
+                )
+            }
+        )
     }
 
     private fun openCustomTabsBrowser(uri: Uri) {
@@ -318,7 +330,7 @@ internal class InterstitialActivity : Activity() {
                 .build()
                 .launchUrl(this, uri)
         } else {
-            Log.d("NotixDebug", "Android device does not support Web browsing")
+            Logger.i("Android device does not support Web browsing")
         }
     }
 
