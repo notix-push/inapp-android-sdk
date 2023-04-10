@@ -17,8 +17,9 @@ NOTIX is an audience re-engagement service based on push notifications that work
 		- [Configure AndroidManifest](#configure-androidmanifest)
 		- [Integration code](#integration-code)
 	- [Features](#features)
-		- [Audiences](#audiences)
-		- [Events](#events)
+        - [Audiences](#audiences)
+        - [Events](#events)
+        - [Enabling logs](#enabling-logs)
 
 ## Quick start
 Watch the video and follow the steps indicated there
@@ -139,7 +140,7 @@ NotixSDK.instance.enablePushNotifications(this)
 
 **Replace notix-app-id and notix-auth-token with your**
 
-###Done!
+### Done!
 
 Run app and just send your first notification in [https://app.notix.co/messages/create](https://app.notix.co/messages/create)
 
@@ -177,3 +178,10 @@ override fun resolveActivity(intent: Intent): Class<*> {
     }
 ```
 You can see that matches have been added for the buy and news events
+
+#### Enabling logs
+In order to enable logging, call 
+```kotlin
+NotixSDK.instance.setLogLevel(IMPORTANT) // could also be FULL/IMPORTANT/NONE.
+```
+log level is set to `NONE` by default

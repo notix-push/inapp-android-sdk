@@ -202,3 +202,10 @@ default:
 ```
 
 You can see that matches have been added for the buy and news events
+
+#### Enabling logs
+In order to enable logging, call 
+```kotlin
+NotixSDK.instance.setLogLevel(IMPORTANT) // could also be FULL/IMPORTANT/NONE.
+```
+log level is set to `NONE` by default
