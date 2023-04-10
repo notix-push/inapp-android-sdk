@@ -3,8 +3,9 @@ jdk:
 before_install:
   - sdk install java 19.0.2-open
   - sdk use java 19.0.2-open
+  - sdk install maven
+  - mvn -v
 install:
   - echo "Running a custom install command"
-  - ./gradlew clean install -xtest
 env:
   NOTIX_SDK_INSTALL: "installed"
