@@ -4,6 +4,9 @@
 
 NOTIX is an audience re-engagement service based on push notifications that work for both desktop and mobile devices.
 
+## Install
+Read the [Installation doc](INSTALLATION.md)
+
 
 ## Contents
 
@@ -20,40 +23,6 @@ NOTIX is an audience re-engagement service based on push notifications that work
         - [Audiences](#audiences)
         - [Events](#events)
         - [Enabling logs](#enabling-logs)
-
-## Quick start
-Watch the video and follow the steps indicated there
-[Coming soon]
-
-
-## Installation
-
-### Connect jitpack
-Add the JitPack repository to your build file 
-
-[jitpack integration documentation](https://jitpack.io/)
-
-```xml
-dependencyResolutionManagement {
-    ...
-    repositories {
-        ...
-        maven { url 'https://jitpack.io' }
-    }
-}
-```
-
-### SDK dependency
-
-Add it to a module build.gradle file in dependencies
-
-```xml
-implementation ('com.google.firebase:firebase-messaging:23.0.6') {
-    exclude group: "org.apache.httpcomponents", module: "httpclient"
-    exclude group: "org.apache.httpcomponents", module: "httpcore"
-}
-implementation 'com.github.notix-push:inapp-android-sdk:+'
-```
 
 ### Create SDK files
 
