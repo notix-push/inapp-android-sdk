@@ -55,7 +55,7 @@ internal class PushDataSourceImpl(
                 text = getStringOrNull("text"),
                 clickData = getStringOrNull("click_data"),
                 impressionData = getStringOrNull("impression_data"),
-                targetUrlData = getStringOrNull("target_url"), // поле должно называться target_url_data. на бек заведена таска на исправление.
+                targetUrl = getStringOrNull("target_url"),
                 iconUrl = getStringOrNull("icon_url"),
                 imageUrl = getStringOrNull("image_url")
             )

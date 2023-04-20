@@ -29,7 +29,7 @@ internal class NotificationReceiverImpl(
         if (!notificationsPermissionController.updateAndGetCanPostNotifications()) return
 
         if (isAppOnForeground(context) &&
-            notification.notifParamsInt.targetUrlData != null &&
+            notification.notifParamsInt.targetUrl != null &&
             notification.notifParams.showToast &&
             notification.notifParams.text != null
         ) {
