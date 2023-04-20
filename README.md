@@ -4,153 +4,123 @@
 
 NOTIX is an audience re-engagement service based on push notifications that work for both desktop and mobile devices.
 
-## Install
-Read the [Installation doc](INSTALLATION.md)
-
-
 ## Contents
 
-- [Notix InApp SDK](#notix-inapp-sdk)
-	- [Contents](#contents)
-	- [Quick start](#quick-start)
-	- [Installation](#installation)
-		- [Connect jitpack](#connect-jitpack)
-		- [SDK dependency](#sdk-dependency) 
-		- [Create SDK files](#create-sdk-files)
-		- [Configure AndroidManifest](#configure-androidmanifest)
-		- [Integration code](#integration-code)
-	- [Features](#features)
-        - [Audiences](#audiences)
-        - [Events](#events)
-        - [Enabling logs](#enabling-logs)
+- [Setup](#setup)
+- [Enable push notifications](#enable-push-notifications)
+- [Features](#features)
+	- [Handle Notix callbacks](#handle-notix-callbacks)
+	- [Modify incoming push messages](#modify-incoming-push-messages) 
+	- [Handle Target Events](#handle-target-events)
+	- [Audiences](#audiences)
+	- [Managing logs](#managing-logs)
 
-### Create SDK files
+## Setup
 
-##### [NotificationResolver.kt](https://img.cdnotix.com/notix-static/NotificationResolver.kt)
+Start with [SDK setup](SETUP.md) if you haven't done it already.
 
-```kotlin
-package YOUR-APPLICATION-PACKAGE
+## Enable push notifications
 
-import android.content.Intent
-import com.notix.notixsdk.INotificationActivityResolver
-
-class NotificationResolver: INotificationActivityResolver {
-    override fun resolveActivity(intent: Intent): Class<*> {
-        return when(intent.getStringExtra("event")) {
-            "main" -> MainActivity::class.java
-            //"second" -> SecondActivity::class.java
-            else -> MainActivity::class.java
-        }
-    }
-}
-```
-
-##### [NotixMessagingServiceImplementation.kt](https://img.cdnotix.com/notix-static/NotixMessagingServiceImplementation.kt)
+Enable push notifications:
 
 ```kotlin
-package YOUR-APPLICATION-PACKAGE
-
-import android.annotation.SuppressLint
-import android.app.Notification
-import com.google.firebase.messaging.RemoteMessage
-import com.notix.notixsdk.NotificationParameters
-import com.notix.notixsdk.NotificationsService
-import com.notix.notixsdk.NotixFirebaseMessagingService
-
-@SuppressLint("MissingFirebaseInstanceTokenRefresh")
-class NotixMessagingServiceImplementation: NotixFirebaseMessagingService() {
-
-    override fun onMessageReceived(message: RemoteMessage) {
-        super.onMessageReceived(message)
-
-        val notification = NotificationParameters().apply {
-            defaults = Notification.DEFAULT_VIBRATE or Notification.DEFAULT_SOUND
-            title = intent.getStringExtra("title")
-            text = intent.getStringExtra("text")
-            smallIcon = R.mipmap.ic_notix
-            largeIcon = R.mipmap.ic_notix
-        }
-
-        NotificationsService().handleNotification(this, NotificationResolver(), intent, notification)
-    }
-}
+Notix.enablePushNotifications(context)
 ```
 
-Replace YOUR-APPLICATION-PACKAGE with your app package
-
-### Configure AndroidManifest
-
-Add it to AndroidManifest.xml file in application part
-
-```xml
-<service
-    android:name=".NotixMessagingServiceImplementation"
-    android:exported="false">
-    <intent-filter>
-        <action android:name="com.google.firebase.MESSAGING_EVENT" />
-    </intent-filter>
-</service>
-```
-**If you have already declared firebase service - replace it**
-
-### Integration code
-Add it to onCreate method in your launcher activity (for example MainActivity)
-
-```kotlin
-NotixSDK.instance.init(
-    this, "notix-app-id", "notix-auth-token", NotixSDKConfig(interstitialStartupEnabled = false)
-)
-```
-And enable push notifications:
-
-```kotlin
-NotixSDK.instance.enablePushNotifications(this)
-```
-
-**Replace notix-app-id and notix-auth-token with your**
-
-### Done!
-
-Run app and just send your first notification in [https://app.notix.co/messages/create](https://app.notix.co/messages/create)
+Run the app and send your first notification using Notix! [https://app.notix.co/messages/create](https://app.notix.co/messages/create)
 
 ## Features
 
-#### Audiences
-You can also manage user audiences (see *link to audiences*)
+### Handle Notix callbacks
 
-just use:
-
-```kotlin
-NotixSDK.instance.audiences.add(this, "custom-audience")
-```
+1. Implement `NotixCallbackHandler` interface
 
 ```kotlin
-NotixSDK.instance.audiences.delete(this, "custom-audience")
-```
-
-#### Events
-
-You can specify which screen to open when you click on the push notification. To do this, you need to set a set of Events on the tag settings page and use it when creating a mailing list on the mailing list creation page.
-
-In the code, it will be enough for you to specify in the NotificationResolver.kt file the correspondence event-name -> ConcreteActivity
-
-For example:
-
-```kotlin
-override fun resolveActivity(intent: Intent): Class<*> {
-        return when(intent.getStringExtra("event")) {
-            "main" -> MainActivity::class.java
-            "buy" -> BuyActivity::class.java
-            "news" -> NewsActivity::class.java
-            else -> MainActivity::class.java
+class CallbackHandler : NotixCallbackHandler {
+    override fun handle(context: Context, callback: NotixCallback) {
+        when (callback) {
+            is NotixCallback.Impression -> Log.i(APP_TAG, callback.toString())
+            is NotixCallback.Subscription -> Log.i(APP_TAG, callback.toString())
+            else -> Unit
         }
     }
+}
 ```
-You can see that matches have been added for the buy and news events
 
-#### Enabling logs
-In order to enable logging, call 
+2. And register it in `init`
+
 ```kotlin
-NotixSDK.instance.setLogLevel(IMPORTANT) // could also be FULL/IMPORTANT/NONE.
+Notix.init(
+	/* ... */
+	callbackHandler = CallbackHandler(),
+	/* ... */
+)
 ```
-log level is set to `NONE` by default
+
+### Modify incoming push messages
+
+You can modify the content of incoming push messages.
+
+1. Implement `NotixNotificationModifier` interface 
+
+```kotlin
+class NotificationModifier : NotixNotificationModifier {
+	override fun modify(context: Context, notificationParameters: NotificationParameters) =
+		notificationParameters.copy(
+			title = "1| " + notificationParameters.title,
+			text = context.packageName + "\n" + notificationParameters.text
+		)
+}
+```
+
+2. And register it in `enablePushNotifications`
+```kotlin
+Notix.enablePushNotifications(
+	/* ... */
+	notificationModifier = NotificationModifier(),
+	/* ... */
+)
+```
+
+### Handle Target Events
+
+1. Implement `NotixTargetEventHandler` interface
+
+```kotlin
+class TargetEventHandler : NotixTargetEventHandler {
+    override fun handle(context: Context, eventName: String?) {
+        val activityClass = when (eventName) {
+            "main" -> MainActivity::class.java
+            "other" -> OtherActivity::class.java
+            else -> MainActivity::class.java
+        }
+        context.startActivity(Intent(context, activityClass))
+    }
+}
+```
+
+2. And register it in `enablePushNotifications`
+```kotlin
+Notix.enablePushNotifications(
+	/* ... */
+	targetEventHandler = TargetEventHandler(),
+	/* ... */
+)
+```
+
+### Audiences
+You can manage user audiences (see *link to audiences*)
+
+```kotlin
+Notix.addAudience("custom-audience")
+Notix.deleteAudience("custom-audience")
+```
+
+### Managing logs
+You can manage logging done by Notix SDK. 
+
+```kotlin
+Notix.setLogLevel(FULL) // can be FULL/IMPORTANT/NONE.
+```
+
+Call `setLogLevel` before `init` to filter all the logs. Log level is set to `IMPORTANT` by default.
