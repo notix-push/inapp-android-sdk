@@ -22,7 +22,7 @@ internal class MainRepositoryImpl(
 ) : MainRepository {
     override suspend fun getConfig(appId: String, authToken: String) =
         runCatching { mainDataSource.getConfig(appId, authToken) }
-            .mapCatching { if (it.appId == "" || it.senderId == 0L || it.pubId == 0) error("invalid config $it") else it }
+            .mapCatching { if (it.appId == "" || it.pubId == 0) error("invalid config $it") else it }
             .fold(
                 onSuccess = {
                     notixCallbackReporter.report(

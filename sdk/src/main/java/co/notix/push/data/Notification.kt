@@ -29,7 +29,7 @@ internal data class NotificationParametersInt(
     val clickData: String?,
     val impressionData: String?,
     val pingData: String?,
-    val targetUrlData: String?,
+    val targetUrl: String?,
 )
 
 internal data class Notification(
@@ -91,7 +91,7 @@ internal val notificationParametersIntToJsonMapper =
             put(CLICK_DATA, from.clickData)
             put(IMPRESSION_DATA, from.impressionData)
             put(PING_DATA, from.pingData)
-            put(TARGET_URL_DATA, from.targetUrlData)
+            put(TARGET_URL, from.targetUrl)
         }
     }
 
@@ -102,7 +102,7 @@ internal val jsonToNotificationParametersIntMapper =
                 clickData = getStringOrNull(CLICK_DATA),
                 impressionData = getStringOrNull(IMPRESSION_DATA),
                 pingData = getStringOrNull(PING_DATA),
-                targetUrlData = getStringOrNull(TARGET_URL_DATA)
+                targetUrl = getStringOrNull(TARGET_URL)
             )
         }
     }
@@ -142,7 +142,7 @@ private const val VIBRATION_PATTERN = "vibrationPattern"
 private const val CLICK_DATA = "clickData"
 private const val IMPRESSION_DATA = "impressionData"
 private const val PING_DATA = "pingData"
-private const val TARGET_URL_DATA = "targetUrlData"
+private const val TARGET_URL = "targetUrl"
 
 private const val NOTIF_PARAMS = "notifParams"
 private const val NOTIF_PARAMS_INT = "notifParamsInt"

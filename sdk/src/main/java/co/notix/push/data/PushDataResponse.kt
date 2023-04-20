@@ -5,7 +5,7 @@ internal data class PushDataResponse(
     val text: String?,
     val clickData: String?,
     val impressionData: String?,
-    val targetUrlData: String?,
+    val targetUrl: String?,
     val iconUrl: String?,
     val imageUrl: String?
 )

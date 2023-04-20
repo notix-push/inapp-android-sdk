@@ -53,7 +53,7 @@ internal class NotixFirebaseMessagingService : FirebaseMessagingService() {
         val notifParamsInt = NotificationParametersInt(
             clickData = message.data["click_data"],
             impressionData = message.data["impression_data"],
-            targetUrlData = message.data["target_url_data"],
+            targetUrl = message.data["target_url"],
             pingData = message.data["pd"]
         )
 

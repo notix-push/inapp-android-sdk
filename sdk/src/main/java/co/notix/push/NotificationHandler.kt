@@ -50,7 +50,7 @@ internal class NotificationHandlerImpl(
                         notifParamsInt = notif.notifParamsInt.copy(
                             clickData = response.clickData,
                             impressionData = response.impressionData,
-                            targetUrlData = response.targetUrlData,
+                            targetUrl = response.targetUrl,
                         )
                     )
                 },
@@ -80,14 +80,14 @@ internal class NotificationHandlerImpl(
     private fun showNotification(notification: Notification): CommandResult {
         val notifParams = notification.notifParams
         val notifParamsInt = notification.notifParamsInt
-        val clickHandlerIntent = if (notifParamsInt.targetUrlData.isNullOrEmpty()) {
+        val clickHandlerIntent = if (notifParamsInt.targetUrl.isNullOrEmpty()) {
             Intent(context, NotificationClickHandlerActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 putExtra("click_data", notifParamsInt.clickData)
                 putExtra("event", notifParams.event)
             }
         } else {
-            val uri = runCatching { Uri.parse(notifParamsInt.targetUrlData) }.getOrNull()
+            val uri = runCatching { Uri.parse(notifParamsInt.targetUrl) }.getOrNull()
                 ?: return CommandResult.FAILURE
             Intent(Intent.ACTION_VIEW).apply { data = uri }
         }
