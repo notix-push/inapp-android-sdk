@@ -1,29 +1,23 @@
-# Notix InApp SDK
-
-<img align="right" width="80px" src="https://img.cdnotix.com/notix-static/readme-icon.png">  
-
-NOTIX is an audience re-engagement service based on push notifications that work for both desktop and mobile devices.
-
 ## Contents
 
 - [Setup](#setup)
-- [Notix](#notix)
-    - [Handle Notix callbacks](#handle-notix-callbacks)
+- [Common settings](#common-settings)
+    - [Handle callbacks](#handle-callbacks)
     - [Managing logs](#managing-logs)
-- [NotixPush](#notixpush)
+- [Push notifications](#push-notifications)
     - [Audiences](#audiences)
     - [Modify incoming push messages](#modify-incoming-push-messages)
     - [Handle Target Events](#handle-target-events)
-- [NotixInterstitial](#notixinterstitial)
+- [Interstitial](#interstitial)
     - [InterstitialLoader](#interstitialloader)
 
 ## Setup
 
 Start with [SDK setup](SETUP.md) if you haven't done it already.
 
-## Notix
+## Common settings
 
-### Handle Notix callbacks
+### Handle callbacks
 
 1. Implement `NotixCallbackHandler` interface
 
@@ -47,7 +41,7 @@ Start with [SDK setup](SETUP.md) if you haven't done it already.
 
 ### Managing logs
 
-You can manage logging done by Notix SDK.
+You can manage logging done by SDK.
 
 ```kotlin  
 Notix.setLogLevel(FULL) // can be FULL/IMPORTANT/NONE.  
@@ -55,9 +49,9 @@ Notix.setLogLevel(FULL) // can be FULL/IMPORTANT/NONE.
 
 Call `setLogLevel` before `init` to filter all the logs. Log level is set to `IMPORTANT` by default.
 
-## NotixPush
+## Push notifications
 
-> *For setup instructions see [NotixPush setup](SETUP.md#notixpush-setup)*
+> *For setup instructions see [Push notifications setup](SETUP.md#push-notifications-setup)*
 
 ### Audiences
 
@@ -110,9 +104,9 @@ You can modify the content of incoming push messages.
     NotixPush.setTargetEventHandler(TargetEventHandler())
     ```
 
-## NotixInterstitial
+## Interstitial
 
-> *For setup instructions see [NotixInterstitial setup](SETUP.md#notixinterstitial-setup)*
+> *For setup instructions see [Interstitial setup](SETUP.md#interstitial-setup)*
 
 ### InterstitialLoader
 

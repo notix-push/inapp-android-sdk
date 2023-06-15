@@ -1,16 +1,10 @@
-# Notix InApp SDK
-
-<img align="right" width="80px" src="https://img.cdnotix.com/notix-static/readme-icon.png">  
-
-NOTIX is an audience re-engagement service based on push notifications that work for both desktop and mobile devices.
-
 ## Contents
 
 * [Setup](#setup)
   * [1. Add SDK dependency](#1-add-sdk-dependency)
   * [2. Extend the Application class](#2-extend-the-application-class)
-* [NotixPush setup](#notixpush-setup)
-* [NotixInterstitial setup](#notixinterstitial-setup)
+* [Push notifications setup](#push-notifications-setup)
+* [Interstitial setup](#interstitial-setup)
 * [Further steps](#further-steps)
 
 ## Setup
@@ -36,7 +30,7 @@ class App : Application() {
 }   
 ```  
 
-2.2. Register the newly created `App` class in your **AndroidManifest.md**.
+2.2. Register the newly created `App` class in your **AndroidManifest.xml**.
 
 ```xml  
 <manifest ...>
@@ -48,21 +42,21 @@ class App : Application() {
 </manifest>  
 ```  
 
-## NotixPush setup
+## Push notifications setup
 
-Call `NotixPush.init()` from `Application.onCreate()` using your **notix app id** and **notix auth token**. These credentials can be found on the page of your In-App Android source https://app.notix.co/sites/list
+Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source https://app.notix.co/sites/list
 
 ```kotlin  
 NotixPush.init(
     context = this,  
-    notixAppId = /* your Notix app id */ 
-    notixToken = /* your Notix token */
+    notixAppId = /* your notixAppId */ 
+    notixToken = /* your notixToken */
 ) 
 ```
 
 Run the app and send your first notification using Notix! https://app.notix.co/messages/create
 
-## NotixInterstitial setup
+## Interstitial setup
 
 Call `NotixInterstitial.init` and create a loader that will be accessible throughout your app:
 ```kotlin
@@ -70,7 +64,7 @@ class App : Application() {
     override fun onCreate() {  
         super.onCreate()
         /* ... */
-        NotixInterstitial.init(notixToken = /* your Notix token */)  
+        NotixInterstitial.init(notixToken = /* your notixToken */)  
         loader.startLoading() 
     }  
   
@@ -95,4 +89,4 @@ App.interstitialLoader.doOnNextAvailable { result ->
 
 ## Further steps
 
-For more Notix options please visit [this page](README.md)
+For additional settings please visit [this page](README.md)
