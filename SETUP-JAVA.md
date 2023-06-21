@@ -44,7 +44,7 @@ class App : Application() {
 
 ## Push notifications setup
 
-Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source
+Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source https://app.notix.co/sites/list
 
 ```kotlin  
 NotixPush.init(
@@ -54,35 +54,35 @@ NotixPush.init(
 ) 
 ```
 
-Run the app and send your first notification!
+Run the app and send your first notification using Notix! https://app.notix.co/messages/create
 
 ## Interstitial setup
 
-Call `NotixInterstitial.init` and create a loader that will be accessible throughout your app:
+Create a loader that will be accessible throughout your app:
 ```kotlin
-class App : Application() {  
-    override fun onCreate() {  
-        super.onCreate()
-        /* ... */
-        NotixInterstitial.init(notixToken = /* your notixToken */)  
-        loader.startLoading() 
-    }  
-  
-    companion object {  
-        val interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)    
-    }  
+class App : Application() {
+  override fun onCreate() {
+    super.onCreate()
+    /* ... */
+    interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)
+    interstitialLoader.startLoading()
+  }
+
+  companion object {
+    lateinit var interstitialLoader: InterstitialLoader
+  }
 }
 ```
 
 At the show site get `Interstitial` instance from the loader and pass it to `NotixInterstitial.show`:
 ```kotlin
-App.interstitialLoader.doOnNextAvailable { result -> 
-    if (result is InterstitialLoader.Result.Data) {
-        NotixInterstitial.show(  
-            context = this,  
-            interstitial = result.interstitial
-        )
-    }
+App.interstitialLoader.doOnNextAvailable { result ->
+  if (result is InterstitialLoader.Result.Data) {
+    NotixInterstitial.show(
+      context = this,
+      interstitial = result.interstitial
+    )
+  }
 }
 ```
 > You do not need to manage the loader yourself. It does its best effort to load and cache exactly 3 entries.
