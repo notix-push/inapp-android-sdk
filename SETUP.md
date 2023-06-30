@@ -44,7 +44,7 @@ class App : Application() {
 
 ## Push notifications setup
 
-Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source https://app.notix.co/sites/list
+Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source
 
 ```kotlin  
 NotixPush.init(
@@ -54,22 +54,22 @@ NotixPush.init(
 ) 
 ```
 
-Run the app and send your first notification using Notix! https://app.notix.co/messages/create
+Run the app and send your first notification!
 
 ## Interstitial setup
 
-Create a loader that will be accessible throughout your app:
+Call `NotixInterstitial.init` and create a loader that will be accessible throughout your app:
 ```kotlin
 class App : Application() {  
     override fun onCreate() {  
         super.onCreate()
         /* ... */
-        interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)
-        interstitialLoader.startLoading() 
+        NotixInterstitial.init(notixToken = /* your notixToken */)  
+        loader.startLoading() 
     }  
   
     companion object {  
-        lateinit var interstitialLoader: InterstitialLoader 
+        val interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)    
     }  
 }
 ```
