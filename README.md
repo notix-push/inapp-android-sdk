@@ -21,6 +21,7 @@ Start with [SDK setup](SETUP.md) if you haven't done it already.
 
 1. Implement `NotixCallbackHandler` interface
 
+    **Kotlin:**
     ```kotlin  
     class CallbackHandler : NotixCallbackHandler {  
         override fun handle(context: Context, callback: NotixCallback) { 
@@ -33,21 +34,43 @@ Start with [SDK setup](SETUP.md) if you haven't done it already.
     }  
     ```
 
+    **Java:**
+    ```java
+    class CallbackHandler implements NotixCallbackHandler {
+        @Override
+        public void handle(@NonNull Context context, @NonNull NotixCallback callback) {
+            /* ... */
+        }
+    }
+    ```
+   
 2. And register it by calling
 
+    **Kotlin:**
     ```kotlin  
     Notix.setCallbackHandler(CallbackHandler()) 
+    ```
+
+    **Java:**
+    ```java
+    Notix.Companion.setCallbackHandler(new CallbackHandler());
     ```
 
 ### Managing logs
 
 You can manage logging done by SDK.
 
+**Kotlin:**
 ```kotlin  
-Notix.setLogLevel(FULL) // can be FULL/IMPORTANT/NONE.  
-```  
+Notix.setLogLevel(FULL) // can be FULL/IMPORTANT/NONE
+```
 
-Call `setLogLevel` before `init` to filter all the logs. Log level is set to `IMPORTANT` by default.
+**Java:**
+```java
+Notix.Companion.setLogLevel(LogLevel.FULL); // can be FULL/IMPORTANT/NONE
+```
+
+Log level is set to `IMPORTANT` by default.
 
 ## Push notifications
 
@@ -57,9 +80,16 @@ Call `setLogLevel` before `init` to filter all the logs. Log level is set to `IM
 
 You can manage user audiences
 
+**Kotlin:**
 ```kotlin  
 NotixPush.addAudience("custom-audience")  
 NotixPush.deleteAudience("custom-audience")  
+```
+
+**Java:**
+```java
+NotixPush.Companion.addAudience("custom-audience");
+NotixPush.Companion.deleteAudience("custom-audience");
 ```
 
 ### Modify incoming push messages
@@ -68,23 +98,42 @@ You can modify the content of incoming push messages.
 
 1. Implement `NotixNotificationModifier` interface
 
+    **Kotlin:**
     ```kotlin  
     class NotificationModifier : NotixNotificationModifier {  
         override fun modify(context: Context, notificationOverrides: NotificationOverrides) =  
             notificationOverrides
     }
-    ```  
+    ```
+
+    **Java:**
+    ```java
+    class NotificationModifier implements NotixNotificationModifier {
+        @Nullable
+        @Override
+        public NotificationOverrides modify(@NonNull Context context, @NonNull NotificationOverrides notificationOverrides) {
+            return notificationOverrides;
+        }
+    }
+    ```
 
 2. And register it by calling:
 
+    **Kotlin:**
     ```kotlin  
     NotixPush.setNotificationModifier(NotificationModifier())
-    ```  
+    ```
+
+    **Java:**
+    ```java
+    NotixPush.Companion.setNotificationModifier(new NotificationModifier());
+    ```
 
 ### Handle Target Events
 
 1. Implement `NotixTargetEventHandler` interface
 
+    **Kotlin:**
     ```kotlin  
     class TargetEventHandler : NotixTargetEventHandler {  
         override fun handle(context: Context, eventName: String?) {  
@@ -96,12 +145,28 @@ You can modify the content of incoming push messages.
             context.startActivity(Intent(context, activityClass))  
         }  
     } 
-    ```  
+    ```
+
+    **Java:**
+    ```java
+    class TargetEventHandler implements NotixTargetEventHandler {
+        @Override
+        public void handle(@NonNull Context context, @Nullable String eventName) {
+            Log.i("TAG", eventName);
+        }
+    }
+    ```
 
 2. And register it by calling:
 
+    **Kotlin:**
     ```kotlin  
     NotixPush.setTargetEventHandler(TargetEventHandler())
+    ```
+
+    **Java:**
+    ```java
+    NotixPush.Companion.setTargetEventHandler(new TargetEventHandler());
     ```
 
 ## Interstitial

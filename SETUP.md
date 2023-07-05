@@ -19,16 +19,28 @@ implementation 'co.notix:android-sdk:+'
 
 ### 2. Extend the Application class
 
-2.1. Create a new file **App.kt** and extend `Application`
+2.1. Create a new file and extend `Application`
 
-```kotlin  
+**Kotlin** App.kt:
+```kotlin
 class App : Application() {
     override fun onCreate() {   
         super.onCreate()
         /* ... */ 
     }
-}   
-```  
+}
+```
+
+**Java** App.java:
+```java
+public class App extends Application { 
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        /* ... */
+    }
+}
+```
 
 2.2. Register the newly created `App` class in your **AndroidManifest.xml**.
 
@@ -39,42 +51,77 @@ class App : Application() {
         android:name=".App"> 
         ... 
     </application>
-</manifest>  
+</manifest>
 ```  
 
 ## Push notifications setup
 
 Call `NotixPush.init()` from `Application.onCreate()` using your **notixAppId** and **notixToken**. These credentials can be found on the page of your In-App Android source
 
-```kotlin  
+**Kotlin:**
+```kotlin
 NotixPush.init(
     context = this,  
     notixAppId = /* your notixAppId */ 
     notixToken = /* your notixToken */
-) 
+)
+```
+
+**Java:**
+```java
+NotixPush.Companion.init(
+    this,
+    /* your notixAppId */,
+    /* your notixToken */,
+    null
+);
 ```
 
 Run the app and send your first notification!
 
 ## Interstitial setup
 
-Call `NotixInterstitial.init` and create a loader that will be accessible throughout your app:
+Create a loader that will be accessible throughout your app and call `startLoading()`:
+
+**Kotlin:**
 ```kotlin
 class App : Application() {  
     override fun onCreate() {  
         super.onCreate()
         /* ... */
-        NotixInterstitial.init(notixToken = /* your notixToken */)  
-        loader.startLoading() 
+        interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)
+        interstitialLoader.startLoading() 
     }  
   
     companion object {  
-        val interstitialLoader = NotixInterstitial.createLoader(zoneId = /* your Zone ID */)    
+        lateinit var interstitialLoader: InterstitialLoader 
     }  
 }
 ```
 
+**Java:**
+```java
+public class App extends Application {
+
+    static InterstitialLoader interstitialLoader;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        /* ... */
+        interstitialLoader = NotixInterstitial.Companion.createLoader(
+                /* your Zone ID */,
+                null,
+                null
+        );
+        interstitialLoader.startLoading();
+    }
+}
+```
+
 At the show site get `Interstitial` instance from the loader and pass it to `NotixInterstitial.show`:
+
+**Kotlin:**
 ```kotlin
 App.interstitialLoader.doOnNextAvailable { result -> 
     if (result is InterstitialLoader.Result.Data) {
@@ -85,6 +132,26 @@ App.interstitialLoader.doOnNextAvailable { result ->
     }
 }
 ```
+
+**Java:**
+```java
+App.interstitialLoader.doOnNextAvailable(result -> {
+            if (result instanceof InterstitialLoader.Result.Data) {
+                NotixInterstitial.Companion.show(
+                        MainActivity.this,
+                        ((InterstitialLoader.Result.Data) result).getInterstitial(),
+                        null,
+                        null,
+                        null,
+                        null
+                );
+            }
+            return Unit.INSTANCE;
+        },
+        5000);
+```
+
+
 > You do not need to manage the loader yourself. It does its best effort to load and cache exactly 3 entries.
 
 ## Further steps
